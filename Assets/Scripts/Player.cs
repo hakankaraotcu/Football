@@ -7,6 +7,7 @@ public class Player : MonoBehaviour
 
     private const float gravity = -9.81f;
     private float speed;
+    private float shootPower;
 
     private Vector3 direction;
     private Vector3 rotation;
@@ -33,8 +34,8 @@ public class Player : MonoBehaviour
     private void Update()
     {
         MoveAndLook();
-        //PickUpBallAndRotate();
-        Shoot();
+        PickUpBallAndRotate();
+        //Shoot();
     }
 
     private void MoveAndLook()
@@ -51,11 +52,24 @@ public class Player : MonoBehaviour
         Vector3 gravityVector = new Vector3(0, gravity, 0);
         controller.Move(direction * Time.deltaTime * (Input.GetKey(KeyCode.E) ? runningSpeed : walkingSpeed));
         transform.LookAt(transform.position + rotation);
+        
     }
 
     private void Shoot()
     {
-
+        if (Input.GetKey(KeyCode.D))
+        {
+            Debug.Log("Shoot Key Pressed");
+            shootPower += Time.deltaTime * 10;
+        }
+        if (Input.GetKeyUp(KeyCode.D))
+        {
+            Debug.Log("Shoot Key Released with shootPower:" + shootPower);
+            ball.transform.parent = null;
+            isBallSticked = false;
+            ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * shootPower, ForceMode.Impulse);
+            shootPower = 0;
+        }
     }
 
     private void PickUpBallAndRotate()
@@ -64,12 +78,20 @@ public class Player : MonoBehaviour
         {
             float distance = Vector3.Distance(transform.position, ball.transform.position);
 
-            if (distance < 0.5f)
+            if (distance < 1.5f)
             {
                 ball.transform.position = ballStickPoint.position;
                 ball.transform.parent = ballStickPoint;
                 isBallSticked = true;
             }
+        }
+
+        else
+        {
+            Vector2 currentPosition = new Vector2(transform.position.x, transform.position.z);
+            speed = Vector2.Distance(currentPosition, previousLocation) / Time.deltaTime;
+            transform.Rotate(new Vector3(transform.right.x, 0, transform.right.z), speed, Space.World);
+            previousLocation = currentPosition;
         }
     }
 }

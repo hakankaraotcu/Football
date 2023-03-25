@@ -8,6 +8,8 @@ TagManager:
   - Deactive Player
   - Ball
   - Ground
+  - LeftGoal
+  - RightGoal
   layers:
   - Default
   - TransparentFX

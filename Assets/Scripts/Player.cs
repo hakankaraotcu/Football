@@ -1,7 +1,11 @@
 using UnityEngine;
+using System.Linq;
 
 public class Player : MonoBehaviour
 {
+    [Header("Type")]
+    [SerializeField] private PlayerType playerType;
+
     [Header("Movement")]
     [SerializeField] private float walkingSpeed;
     [SerializeField] private float runningSpeed;
@@ -9,44 +13,58 @@ public class Player : MonoBehaviour
     [Header("Shooting")]
     [SerializeField] private float shootingPower;
 
+    [Header("Passing")]
+    [SerializeField] private float passingPower;
+
     private const float gravity = -9.81f;
-    private float speed;
     private float shootingForce;
-    private float timeShot = -1;
 
     private const int ANIMATION_LAYER_SHOOTING = 1;
 
     private Vector3 direction;
     private Vector3 rotation;
-    private Vector3 previousLocation;
-
-    private Transform ballStickPoint;
-
-    private bool isBallSticked;
 
     private Ball ball;
 
+    private Player[] players;
+
     private Animator animator;
     private CharacterController controller;
+
+    private GameObject activenessArrow;
 
     public Ball Ball { get => ball; set => ball = value; }
 
     private void Awake()
     {
-        isBallSticked = false;
         animator = GetComponent<Animator>();
         controller = GetComponent<CharacterController>();
-        //ball = GameObject.FindWithTag("Ball");
-        ballStickPoint = transform.GetChild(8);
+        players = FindObjectsOfType<Player>().Where(p => p != this).ToArray();
+        activenessArrow = transform.GetChild(9).gameObject;
 
-        shootingForce = 0;
+        switch (playerType)
+        {
+            case PlayerType.Human:
+                MakePlayerHuman();
+                break;
+            case PlayerType.AI:
+                MakePlayerAI();
+                break;
+        }
     }
 
     private void Update()
     {
-        MoveAndLook();
-        //PickUpBallAndRotate();
-        Shoot();
+        switch (playerType)
+        {
+            case PlayerType.Human:
+                MoveAndLook();
+                Shoot();
+                Pass();
+                break;
+            case PlayerType.AI:
+                break;
+        }
     }
 
     private void MoveAndLook()
@@ -60,36 +78,9 @@ public class Player : MonoBehaviour
         animator.SetBool("Run", isRunning);
         direction = new Vector3(-vertical, gravity, horizontal);
         rotation = new Vector3(-vertical, 0, horizontal);
-        Vector3 gravityVector = new Vector3(0, gravity, 0);
         controller.Move(direction * Time.deltaTime * (Input.GetKey(KeyCode.E) ? runningSpeed : walkingSpeed));
         transform.LookAt(transform.position + rotation);
 
-    }
-
-    private void PickUpBallAndRotate()
-    {
-        if (!isBallSticked)
-        {
-            float distance = Vector3.Distance(transform.position, ball.transform.position);
-
-            if (distance < 1.5f)
-            {
-                ball.transform.position = ballStickPoint.position;
-                ball.transform.parent = ballStickPoint;
-                isBallSticked = true;
-
-                ball.GetComponent<Rigidbody>().velocity = Vector3.zero;
-                ball.GetComponent<Rigidbody>().angularVelocity= Vector3.zero;
-            }
-        }
-
-        else
-        {
-            Vector2 currentPosition = new Vector2(transform.position.x, transform.position.z);
-            speed = Vector2.Distance(currentPosition, previousLocation) / Time.deltaTime;
-            transform.Rotate(new Vector3(transform.right.x, 0, transform.right.z), speed, Space.World);
-            previousLocation = currentPosition;
-        }
     }
 
     private void Shoot()
@@ -100,7 +91,6 @@ public class Player : MonoBehaviour
             {
                 Debug.Log("Shooting force is :" + shootingForce);
                 shootingForce += Time.deltaTime * shootingPower;
-                timeShot = Time.time;
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
@@ -111,7 +101,7 @@ public class Player : MonoBehaviour
                 ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
 
                 shootingForce = 0f;
-                ball.IsStickToPlayer = false; 
+                ball.IsStickToPlayer = false;
                 ball = null;
             }
         }
@@ -120,5 +110,61 @@ public class Player : MonoBehaviour
             animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, Mathf.Lerp(animator.GetLayerWeight(ANIMATION_LAYER_SHOOTING), 0f, Time.deltaTime * 10f));
         }
 
+    }
+
+    private void Pass()
+    {
+        if (ball != null)
+        {
+            float horizontal = Input.GetAxis("Horizontal");
+            float vertical = Input.GetAxis("Vertical");
+            Vector3 passDirection = new Vector3(-vertical, 0, horizontal);
+
+            Debug.DrawLine(transform.position, transform.position + new Vector3(-vertical, 0, horizontal) * 10, Color.red);
+
+            Player targetPlayer = FindPlayerInDirection(passDirection);
+
+            if (targetPlayer != null)
+            {
+                if (Input.GetKeyDown(KeyCode.S)) 
+                {
+                    Vector3 direction = DirectionTo(targetPlayer);
+
+                    this.MakePlayerAI();
+                    ball.IsStickToPlayer = false;
+                    ball.GetComponent<Rigidbody>().AddForce(direction * passingPower);
+                    ball.TransformPlayer = targetPlayer.transform;
+                    ball = null;
+                }
+            }
+        }
+    }
+
+    private Player FindPlayerInDirection(Vector3 direction)
+    {
+        return players.OrderBy(p => Vector3.Angle(direction, DirectionTo(p))).FirstOrDefault();
+    }
+
+    private Vector3 DirectionTo(Player p)
+    {
+        return Vector3.Normalize(p.transform.position - ball.transform.position);
+    }
+
+    public void MakePlayerAI()
+    {
+        //Debug.Log("MakePlayerAI is working for: " + gameObject.name);
+        playerType = PlayerType.AI;
+        gameObject.tag = "Deactive Player";
+        animator.SetBool("Walk", false);
+        animator.SetBool("Run", false);
+        activenessArrow.SetActive(false);
+    }
+
+    public void MakePlayerHuman()
+    {
+        //Debug.Log("MakePlayerHuman is working for: " + gameObject.name);
+        playerType = PlayerType.Human;
+        gameObject.tag = "Active Player";
+        activenessArrow.SetActive(true);
     }
 }

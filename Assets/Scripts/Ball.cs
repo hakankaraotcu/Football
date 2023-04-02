@@ -5,8 +5,8 @@ using UnityEngine;
 public class Ball : MonoBehaviour
 {
     private bool isStickToPlayer;
-    
-    [SerializeField] private Transform transformPlayer;
+
+    private Transform transformPlayer;
     private Transform ballStickPosition;
 
     private float speed;
@@ -16,11 +16,23 @@ public class Ball : MonoBehaviour
     private Player player;
 
     public bool IsStickToPlayer { get => isStickToPlayer; set => isStickToPlayer = value; }
+    public Transform TransformPlayer
+    {
+        get => transformPlayer; 
+        set 
+        {
+            transformPlayer = value;
+            ballStickPosition = transformPlayer.GetChild(8);
+            player = value.GetComponent<Player>();
+            player.MakePlayerHuman();
+        }
+    }
 
     private void Start()
     {
+        transformPlayer = GameObject.FindWithTag("Active Player").transform;
         ballStickPosition = transformPlayer.GetChild(8);
-        player = transformPlayer.GetComponent<Player>();
+        player = GameObject.FindGameObjectWithTag("Active Player").GetComponent<Player>();
     }
 
     private void Update()
@@ -32,6 +44,9 @@ public class Ball : MonoBehaviour
             {
                 IsStickToPlayer = true;
                 player.Ball = this;
+                //player.MakePlayerHuman();
+                GetComponent<Rigidbody>().velocity = Vector3.zero;
+                GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
             }
         }
         else

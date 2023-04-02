@@ -29,9 +29,15 @@ public class GameManager : MonoBehaviour
     private int homeTeamScore;
     private int awayTeamScore;
 
+    private Player[] players;
+
+    public Player[] Players { get => players; set => players = value; }
+
     private void Start()
     {
         Initialize();
+
+        players = FindObjectsOfType<Player>();
     }
 
     private void Initialize()

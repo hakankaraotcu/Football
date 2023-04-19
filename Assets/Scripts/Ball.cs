@@ -18,8 +18,8 @@ public class Ball : MonoBehaviour
     public bool IsStickToPlayer { get => isStickToPlayer; set => isStickToPlayer = value; }
     public Transform TransformPlayer
     {
-        get => transformPlayer; 
-        set 
+        get => transformPlayer;
+        set
         {
             transformPlayer = value;
             ballStickPosition = transformPlayer.GetChild(8);
@@ -44,7 +44,6 @@ public class Ball : MonoBehaviour
             {
                 IsStickToPlayer = true;
                 player.Ball = this;
-                //player.MakePlayerHuman();
                 GetComponent<Rigidbody>().velocity = Vector3.zero;
                 GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
             }

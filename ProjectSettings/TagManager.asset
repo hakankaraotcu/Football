@@ -10,6 +10,8 @@ TagManager:
   - Ground
   - LeftGoal
   - RightGoal
+  - Out
+  - Throw
   layers:
   - Default
   - TransparentFX

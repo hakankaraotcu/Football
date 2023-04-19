@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Linq;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class Player : MonoBehaviour
 
     private Vector3 direction;
     private Vector3 rotation;
+
+    private bool canWalk;
 
     private Ball ball;
 
@@ -53,12 +56,17 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        canWalk = true;
+    }
+
     private void Update()
     {
         switch (playerType)
         {
             case PlayerType.Human:
-                MoveAndLook();
+                if(canWalk) MoveAndLook();
                 Shoot();
                 Pass();
                 break;
@@ -73,7 +81,7 @@ public class Player : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
 
         bool isWalking = Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow);
-        bool isRunning = Input.GetKey(KeyCode.E) && isWalking;
+        bool isRunning = Input.GetKey(KeyCode.E) && isWalking && canWalk;
         animator.SetBool("Walk", isWalking);
         animator.SetBool("Run", isRunning);
         direction = new Vector3(-vertical, gravity, horizontal);
@@ -89,25 +97,16 @@ public class Player : MonoBehaviour
         {
             if (Input.GetKey(KeyCode.D))
             {
-                Debug.Log("Shooting force is :" + shootingForce);
                 shootingForce += Time.deltaTime * shootingPower;
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
-                Debug.Log("Ball shooted with force :" + shootingForce);
-                animator.Play("Shoot", ANIMATION_LAYER_SHOOTING, 0f);
-                animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 1f);
-                Vector3 target = transform.forward + transform.up;
-                ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
-
-                shootingForce = 0f;
-                ball.IsStickToPlayer = false;
-                ball = null;
+                StartCoroutine(ShootAnimationEvent());
             }
         }
         else
         {
-            animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, Mathf.Lerp(animator.GetLayerWeight(ANIMATION_LAYER_SHOOTING), 0f, Time.deltaTime * 10f));
+            animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, Mathf.Lerp(animator.GetLayerWeight(ANIMATION_LAYER_SHOOTING), 0f, Time.deltaTime));
         }
 
     }
@@ -126,7 +125,7 @@ public class Player : MonoBehaviour
 
             if (targetPlayer != null)
             {
-                if (Input.GetKeyDown(KeyCode.S)) 
+                if (Input.GetKeyDown(KeyCode.S))
                 {
                     Vector3 direction = DirectionTo(targetPlayer);
 
@@ -152,7 +151,6 @@ public class Player : MonoBehaviour
 
     public void MakePlayerAI()
     {
-        //Debug.Log("MakePlayerAI is working for: " + gameObject.name);
         playerType = PlayerType.AI;
         gameObject.tag = "Deactive Player";
         animator.SetBool("Walk", false);
@@ -162,9 +160,22 @@ public class Player : MonoBehaviour
 
     public void MakePlayerHuman()
     {
-        //Debug.Log("MakePlayerHuman is working for: " + gameObject.name);
         playerType = PlayerType.Human;
         gameObject.tag = "Active Player";
         activenessArrow.SetActive(true);
+    }
+
+    private IEnumerator ShootAnimationEvent()
+    {
+        canWalk = false;
+        animator.Play("Shoot", ANIMATION_LAYER_SHOOTING, 0f);
+        animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 1f);
+        yield return new WaitForSeconds(0.4f);
+        Vector3 target = transform.forward + transform.up;
+        ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
+        shootingForce = 0f;
+        ball.IsStickToPlayer = false;
+        ball = null;
+        canWalk = true;
     }
 }

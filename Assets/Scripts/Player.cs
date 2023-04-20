@@ -7,6 +7,9 @@ public class Player : MonoBehaviour
     [Header("Type")]
     [SerializeField] private PlayerType playerType;
 
+    [Header("Team")]
+    [SerializeField] public Team team;
+
     [Header("Movement")]
     [SerializeField] private float walkingSpeed;
     [SerializeField] private float runningSpeed;
@@ -29,7 +32,7 @@ public class Player : MonoBehaviour
 
     private Ball ball;
 
-    private Player[] players;
+    public Player[] players;
 
     private Animator animator;
     private CharacterController controller;
@@ -42,7 +45,7 @@ public class Player : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         controller = GetComponent<CharacterController>();
-        players = FindObjectsOfType<Player>().Where(p => p != this).ToArray();
+        players = FindObjectsOfType<Player>().Where(p => p != this && p.team == this.team).ToArray();
         activenessArrow = transform.GetChild(9).gameObject;
 
         switch (playerType)
@@ -88,7 +91,6 @@ public class Player : MonoBehaviour
         rotation = new Vector3(-vertical, 0, horizontal);
         controller.Move(direction * Time.deltaTime * (Input.GetKey(KeyCode.E) ? runningSpeed : walkingSpeed));
         transform.LookAt(transform.position + rotation);
-
     }
 
     private void Shoot()
@@ -98,6 +100,7 @@ public class Player : MonoBehaviour
             if (Input.GetKey(KeyCode.D))
             {
                 shootingForce += Time.deltaTime * shootingPower;
+                Debug.Log("Force:" + shootingForce);
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
@@ -108,7 +111,6 @@ public class Player : MonoBehaviour
         {
             animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, Mathf.Lerp(animator.GetLayerWeight(ANIMATION_LAYER_SHOOTING), 0f, Time.deltaTime));
         }
-
     }
 
     private void Pass()
@@ -136,6 +138,14 @@ public class Player : MonoBehaviour
                     ball = null;
                 }
             }
+            else
+            {
+                Debug.Log("No target player");
+            }
+        }
+        else
+        {
+            Debug.Log("No ball");
         }
     }
 
@@ -171,11 +181,13 @@ public class Player : MonoBehaviour
         animator.Play("Shoot", ANIMATION_LAYER_SHOOTING, 0f);
         animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 1f);
         yield return new WaitForSeconds(0.4f);
-        Vector3 target = transform.forward + transform.up;
+        Vector3 target = transform.forward + transform.up * 0.07f;
         ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
+        Debug.Log("Shot:" +  shootingForce);
         shootingForce = 0f;
         ball.IsStickToPlayer = false;
         ball = null;
+        yield return new WaitForSeconds(0.5f);
         canWalk = true;
     }
 }

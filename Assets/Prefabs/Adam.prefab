@@ -2656,7 +2656,7 @@ MonoBehaviour:
   playerType: 0
   walkingSpeed: 7
   runningSpeed: 14
-  shootingPower: 100
+  shootingPower: 500
   passingPower: 5000
 --- !u!143 &3530923519018467479
 CharacterController:

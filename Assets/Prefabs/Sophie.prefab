@@ -354,7 +354,7 @@ GameObject:
   - component: {fileID: 535114360742023215}
   - component: {fileID: 535114360742023208}
   m_Layer: 0
-  m_Name: ArrowCanvas (1)
+  m_Name: ArrowCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -496,7 +496,7 @@ GameObject:
   m_Component:
   - component: {fileID: 535114362492401714}
   m_Layer: 0
-  m_Name: BallStickPosition (1)
+  m_Name: BallStickPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1664,10 +1664,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerType: 0
+  team: 0
   walkingSpeed: 7
   runningSpeed: 14
   shootingPower: 500
   passingPower: 5000
+  players: []
 --- !u!143 &7229046947097702327
 CharacterController:
   m_ObjectHideFlags: 0

@@ -367,10 +367,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerType: 0
+  team: 0
   walkingSpeed: 7
   runningSpeed: 14
   shootingPower: 500
   passingPower: 5000
+  players: []
 --- !u!143 &1824464841322290770
 CharacterController:
   m_ObjectHideFlags: 0
@@ -2239,7 +2241,7 @@ GameObject:
   - component: {fileID: 7293808801745661460}
   - component: {fileID: 7293808801745661463}
   m_Layer: 0
-  m_Name: Canvas (1)
+  m_Name: ArrowCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

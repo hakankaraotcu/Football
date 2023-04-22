@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class Ball : MonoBehaviour
@@ -11,9 +12,30 @@ public class Ball : MonoBehaviour
 
     private Vector3 previousLocation;
 
-    private Player player;
+    private Player currentPlayer;
 
-    public bool IsStickToPlayer { get => isStickToPlayer; set => isStickToPlayer = value; }
+    private Player lastPlayer;
+    public Player LastPlayer { get => lastPlayer; private set => lastPlayer = value; }
+
+    public bool IsStickToPlayer
+    {
+        get => isStickToPlayer;
+        set
+        {
+            isStickToPlayer = value;
+            if (!value)
+            {
+                lastPlayer = currentPlayer;
+                currentPlayer = null;
+            }
+            else
+            {
+                GetComponent<Rigidbody>().velocity = Vector3.zero;
+                GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+            }
+        }
+    }
+
     public Transform TransformPlayer
     {
         get => transformPlayer;
@@ -21,32 +43,16 @@ public class Ball : MonoBehaviour
         {
             transformPlayer = value;
             ballStickPosition = transformPlayer.GetChild(8);
-            player = value.GetComponent<Player>();
-            player.MakePlayerHuman();
+            currentPlayer = value.GetComponent<Player>();
+            lastPlayer = currentPlayer;
+            currentPlayer.MakePlayerHuman();
         }
     }
 
-    private void Start()
-    {
-        transformPlayer = GameObject.FindWithTag("Active Player").transform;
-        ballStickPosition = transformPlayer.GetChild(8);
-        player = GameObject.FindGameObjectWithTag("Active Player").GetComponent<Player>();
-    }
 
     private void Update()
     {
-        if (!isStickToPlayer)
-        {
-            float distanceToPlayer = Vector3.Distance(transformPlayer.position, transform.position);
-            if (distanceToPlayer < 1f)
-            {
-                IsStickToPlayer = true;
-                player.Ball = this;
-                GetComponent<Rigidbody>().velocity = Vector3.zero;
-                GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
-            }
-        }
-        else
+        if(isStickToPlayer)
         {
             Vector2 currentLocation = new Vector2(transform.position.x, transform.position.z);
             speed = Vector2.Distance(currentLocation, previousLocation) / Time.deltaTime;

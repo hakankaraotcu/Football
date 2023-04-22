@@ -6,15 +6,9 @@ public class Goal : MonoBehaviour
     {
         if (other.CompareTag("Ball"))
         {
-            switch (transform.tag)
-            {
-                case "RightGoal":
-                    GameManager.GetInstance().OnHomeTeamScored();
-                    break;
-                case "LeftGoal":
-                    GameManager.GetInstance().OnAwayTeamScored();
-                    break;
-            }
+            Debug.Log("Goal");
+            Physics.IgnoreCollision(other, GetComponent<Collider>());
+            GameManager.GetInstance().ScoreGoal(other.GetComponent<Ball>().LastPlayer);
         }
     }
 }

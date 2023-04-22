@@ -69,12 +69,24 @@ public class Player : MonoBehaviour
         switch (playerType)
         {
             case PlayerType.Human:
-                if(canWalk) MoveAndLook();
+                if (canWalk) MoveAndLook();
                 Shoot();
                 Pass();
+                GetBall();
                 break;
             case PlayerType.AI:
                 break;
+        }
+    }
+
+    private void GetBall()
+    {
+        float distanceToBall = Vector3.Distance(transform.position, FindBall().transform.position);
+        if (distanceToBall < 1f)
+        {
+            FindBall().GetComponent<Ball>().IsStickToPlayer = true;
+            FindBall().GetComponent<Ball>().TransformPlayer = transform;
+            this.ball = FindBall().GetComponent<Ball>();
         }
     }
 
@@ -179,5 +191,10 @@ public class Player : MonoBehaviour
         ball = null;
         yield return new WaitForSeconds(0.5f);
         canWalk = true;
+    }
+
+    private GameObject FindBall()
+    {
+        return GameManager.GetInstance().Ball;
     }
 }

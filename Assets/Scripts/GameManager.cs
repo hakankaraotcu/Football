@@ -89,6 +89,7 @@ public class GameManager : MonoBehaviour
 
     private void FinishGame()
     {
+        Debug.Log("Finishing the Game");
         Destroy(FindObjectOfType<Ball>().gameObject);
         foreach (Player player in players)
         {

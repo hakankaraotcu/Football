@@ -100,7 +100,6 @@ public class Player : MonoBehaviour
             if (Input.GetKey(KeyCode.D))
             {
                 shootingForce += Time.deltaTime * shootingPower;
-                Debug.Log("Force:" + shootingForce);
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
@@ -138,14 +137,6 @@ public class Player : MonoBehaviour
                     ball = null;
                 }
             }
-            else
-            {
-                Debug.Log("No target player");
-            }
-        }
-        else
-        {
-            Debug.Log("No ball");
         }
     }
 
@@ -183,7 +174,6 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
         Vector3 target = transform.forward + transform.up * 0.07f;
         ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
-        Debug.Log("Shot:" +  shootingForce);
         shootingForce = 0f;
         ball.IsStickToPlayer = false;
         ball = null;

@@ -8,7 +8,16 @@ public class OutHandler : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Ball"))
         {
-            GameManager.GetInstance().Out(other.GetComponent<Ball>().LastPlayer, gameObject.tag);
+            switch(gameObject.tag)
+            {
+                case "Throw":
+                    Vector3 collisionPoint = other.ClosestPointOnBounds(transform.position);
+                    GameManager.GetInstance().Throw(other.GetComponent<Ball>().LastPlayer, collisionPoint);
+                    break;
+                case "Out":
+                    GameManager.GetInstance().Out(other.GetComponent<Ball>().LastPlayer);
+                    break;
+            }
         }
     }
 }

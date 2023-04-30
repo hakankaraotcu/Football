@@ -49,6 +49,8 @@ public class GameManager : MonoBehaviour
 
     public List<Player> Players { get; private set; }
 
+    public bool controlable;
+
     private void OnEnable()
     {
         StartGame();
@@ -61,6 +63,7 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
+        this.controlable = true;
         this.ball = Instantiate(this.ballPrefab);
         FindObjectOfType<CameraFollow>().SetBall(ball.transform);
 
@@ -126,7 +129,7 @@ public class GameManager : MonoBehaviour
         blueTeamScoreText.text = "B:" + blueTeamScore.ToString();
     }
     
-    public void Out(Player lastTouchedPlayer, string outType)
+    public void Out(Player lastTouchedPlayer)
     {
         switch (lastTouchedPlayer.team)
         {
@@ -137,6 +140,11 @@ public class GameManager : MonoBehaviour
                 //OnBlueTeamScored();
                 break;
         }
+    }
+
+    public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
+    {
+
     }
     
     public void ScoreGoal(Player lastTouchedPlayer)

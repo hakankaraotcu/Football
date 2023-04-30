@@ -1345,7 +1345,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3978468691990022490}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.1, y: 0.151, z: 1.68}
+  m_LocalPosition: {x: 0.28, y: 0.15, z: 1.64}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1752,10 +1752,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerType: 1
+  team: 0
   walkingSpeed: 7
   runningSpeed: 14
   shootingPower: 500
   passingPower: 5000
+  players: []
 --- !u!143 &6534545067497952996
 CharacterController:
   m_ObjectHideFlags: 0

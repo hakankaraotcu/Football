@@ -69,10 +69,13 @@ public class Player : MonoBehaviour
         switch (playerType)
         {
             case PlayerType.Human:
-                if (canWalk) MoveAndLook();
-                Shoot();
-                Pass();
-                GetBall();
+                if (GameManager.GetInstance().controlable)
+                {
+                    if (canWalk) MoveAndLook();
+                    Shoot();
+                    Pass();
+                    GetBall();
+                }
                 break;
             case PlayerType.AI:
                 break;
@@ -197,4 +200,5 @@ public class Player : MonoBehaviour
     {
         return GameManager.GetInstance().Ball;
     }
+
 }

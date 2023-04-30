@@ -5,8 +5,9 @@ using System.Collections;
 
 public class MenuManager : MonoBehaviour
 {
+
     [Header("Menu Screens")]
-    [SerializeField] private GameObject loadingScreen;
+    [SerializeField] protected GameObject loadingScreen;
     [SerializeField] private GameObject controlsScreen;
     [SerializeField] private GameObject mainMenuScreen;
 
@@ -15,7 +16,7 @@ public class MenuManager : MonoBehaviour
 
     public void LoadScene(int sceneIndex)
     {
-        mainMenuScreen.SetActive(false);
+        if (mainMenuScreen != null) mainMenuScreen.SetActive(false);
         loadingScreen.SetActive(true);
 
         StartCoroutine(LoadGame(sceneIndex));

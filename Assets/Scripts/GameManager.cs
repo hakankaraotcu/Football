@@ -131,20 +131,21 @@ public class GameManager : MonoBehaviour
     
     public void Out(Player lastTouchedPlayer)
     {
-        switch (lastTouchedPlayer.team)
-        {
-            case Team.Red:
-                //OnRedTeamScored();
-                break;
-            case Team.Blue:
-                //OnBlueTeamScored();
-                break;
-        }
+        // switch (lastTouchedPlayer.team)
+        // {
+        //     case Team.Red:
+        //         //OnRedTeamScored();
+        //         break;
+        //     case Team.Blue:
+        //         //OnBlueTeamScored();
+        //         break;
+        // }
+        //PlacePlayers();
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
-
+        //PlacePlayers();
     }
     
     public void ScoreGoal(Player lastTouchedPlayer)
@@ -166,8 +167,10 @@ public class GameManager : MonoBehaviour
     {
         foreach (GameObject player in redTeamPlayers)
         {
+            player.GetComponent<Player>().MakePlayerAI();
             player.transform.position = redTeamSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
             player.transform.LookAt(Vector3.zero);
+            if(redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
         }
 
         foreach (GameObject player in blueTeamPlayers)
@@ -195,7 +198,7 @@ public class GameManager : MonoBehaviour
         goalCelebrationText.transform.DOLocalMoveX(1500, 1f);
         yield return new WaitForSeconds(1.25f);
         goalCelebrationText.gameObject.SetActive(false);
-        goalCelebrationText.transform.localPosition = new Vector3(-1500, goalCelebrationText.transform.position.y, goalCelebrationText.transform.position.z);
+        goalCelebrationText.transform.localPosition = new Vector3(-1500, 0, 0);
         PlacePlayers();
     }
 }

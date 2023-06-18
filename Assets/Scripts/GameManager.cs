@@ -36,24 +36,18 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private Transform redTeamSpawn;
     [SerializeField] private Transform blueTeamSpawn;
-    [SerializeField] private Transform redTeamAttack;
-    [SerializeField] private Transform redTeamDefend;
-    [SerializeField] private Transform blueTeamAttack;
-    [SerializeField] private Transform blueTeamDefend;
 
     [SerializeField] private GameObject[] characters;
     [SerializeField] private GameObject ballPrefab;
 
     private GameObject ball;
-    public GameObject Ball { get => ball; private set => ball = value; }
+    public GameObject Ball { get => ball; private set => ball = value;}
 
     private List<Player> players;
     private List<GameObject> redTeamPlayers;
     private List<GameObject> blueTeamPlayers;
 
     public List<Player> Players { get; private set; }
-
-    public BallState ballState;
 
     public bool controlable;
 
@@ -69,7 +63,6 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
-        ballState = BallState.Free;
         this.controlable = true;
         this.ball = Instantiate(this.ballPrefab);
         FindObjectOfType<CameraFollow>().SetBall(ball.transform);
@@ -77,21 +70,19 @@ public class GameManager : MonoBehaviour
         players = new List<Player>();
         redTeamPlayers = new List<GameObject>();
         blueTeamPlayers = new List<GameObject>();
-
+        
         redTeamScore = 0;
         blueTeamScore = 0;
 
         List<GameObject> temp = characters.Where(x => true).ToList();
 
-        for (int i = 0; i < redTeamSpawn.childCount; i++)
+        for(int i = 0; i < redTeamSpawn.childCount; i++)
         {
             int randomIndex = Random.Range(0, temp.Count);
             GameObject character = Instantiate(temp[randomIndex], redTeamSpawn.GetChild(i).position, Quaternion.identity);
             character.transform.LookAt(Vector3.zero);
             character.GetComponent<Player>().MakePlayerAI();
             character.GetComponent<Player>().team = Team.Red;
-            character.GetComponent<Player>().attackZone = redTeamAttack.GetChild(i);
-            character.GetComponent<Player>().defendZone = redTeamDefend.GetChild(i);
             redTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             if (i == 0) character.GetComponent<Player>().MakePlayerHuman();
@@ -105,8 +96,6 @@ public class GameManager : MonoBehaviour
             character.transform.LookAt(Vector3.zero);
             character.GetComponent<Player>().MakePlayerAI();
             character.GetComponent<Player>().team = Team.Blue;
-            character.GetComponent<Player>().attackZone = blueTeamAttack.GetChild(i);
-            character.GetComponent<Player>().defendZone = blueTeamDefend.GetChild(i);
             blueTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             temp.RemoveAt(randomIndex);
@@ -114,7 +103,7 @@ public class GameManager : MonoBehaviour
 
         foreach (Player player in players)
         {
-            player.GetComponent<Player>().allyPlayers = players.Where(x => x != player && player.team == x.team).ToArray();
+            player.GetComponent<Player>().players = players.Where(x => x != player && player.team == x.team).ToArray();
         }
     }
 
@@ -139,12 +128,9 @@ public class GameManager : MonoBehaviour
         blueTeamScore++;
         blueTeamScoreText.text = "B:" + blueTeamScore.ToString();
     }
-
+    
     public void Out(Player lastTouchedPlayer)
     {
-<<<<<<< HEAD
-        Invoke(nameof(PlacePlayers), 1f);
-=======
         // switch (lastTouchedPlayer.team)
         // {
         //     case Team.Red:
@@ -155,18 +141,13 @@ public class GameManager : MonoBehaviour
         //         break;
         // }
         //PlacePlayers();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
-<<<<<<< HEAD
-        Invoke(nameof(PlacePlayers), 1f);
-=======
         //PlacePlayers();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
     }
-
+    
     public void ScoreGoal(Player lastTouchedPlayer)
     {
         switch (lastTouchedPlayer.team)
@@ -189,11 +170,7 @@ public class GameManager : MonoBehaviour
             player.GetComponent<Player>().MakePlayerAI();
             player.transform.position = redTeamSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
             player.transform.LookAt(Vector3.zero);
-<<<<<<< HEAD
-            if (redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
-=======
             if(redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
         }
 
         foreach (GameObject player in blueTeamPlayers)
@@ -204,7 +181,6 @@ public class GameManager : MonoBehaviour
 
         Destroy(ball);
         SpawnBall();
-        ballState = BallState.Free;
     }
 
     private void SpawnBall()
@@ -213,34 +189,16 @@ public class GameManager : MonoBehaviour
         FindObjectOfType<CameraFollow>().SetBall(ball.transform);
     }
 
-    public Player FindClosestPlayerToBall()
-    {
-        float minDistance = Mathf.Infinity;
-        Player closestPlayer = null;
-        foreach (Player player in players)
-        {
-            float distance = Vector3.Distance(player.transform.position, ball.transform.position);
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                closestPlayer = player;
-            }
-        }
-        return closestPlayer.GetComponent<Player>();
-    }
-
     public IEnumerator OnGoalScored()
     {
-        controlable = false;
         goalCelebrationText.gameObject.SetActive(true);
         goalCelebrationText.text = "GOAL";
         goalCelebrationText.transform.DOLocalMoveX(0, 1f);
-        yield return new WaitForSeconds(2f);
-        goalCelebrationText.transform.DOLocalMoveX(1500, 1f);
         yield return new WaitForSeconds(1.5f);
+        goalCelebrationText.transform.DOLocalMoveX(1500, 1f);
+        yield return new WaitForSeconds(1.25f);
         goalCelebrationText.gameObject.SetActive(false);
         goalCelebrationText.transform.localPosition = new Vector3(-1500, 0, 0);
         PlacePlayers();
-        controlable = true;
     }
 }

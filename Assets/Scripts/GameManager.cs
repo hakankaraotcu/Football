@@ -142,39 +142,12 @@ public class GameManager : MonoBehaviour
 
     public void Out(Player lastTouchedPlayer)
     {
-<<<<<<< HEAD
-<<<<<<< HEAD
         Invoke(nameof(PlacePlayers), 1f);
-=======
-=======
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
-        // switch (lastTouchedPlayer.team)
-        // {
-        //     case Team.Red:
-        //         //OnRedTeamScored();
-        //         break;
-        //     case Team.Blue:
-        //         //OnBlueTeamScored();
-        //         break;
-        // }
-        //PlacePlayers();
-<<<<<<< HEAD
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
-=======
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
-<<<<<<< HEAD
-<<<<<<< HEAD
         Invoke(nameof(PlacePlayers), 1f);
-=======
-        //PlacePlayers();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
-=======
-        //PlacePlayers();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
     }
 
     public void ScoreGoal(Player lastTouchedPlayer)
@@ -199,15 +172,7 @@ public class GameManager : MonoBehaviour
             player.GetComponent<Player>().MakePlayerAI();
             player.transform.position = redTeamSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
             player.transform.LookAt(Vector3.zero);
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
-=======
-            if(redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
-=======
-            if(redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
->>>>>>> c01a913e50ff3c04c048c4bfa7afb5d76543dda7
         }
 
         foreach (GameObject player in blueTeamPlayers)

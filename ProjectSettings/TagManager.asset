@@ -12,6 +12,8 @@ TagManager:
   - RightGoal
   - Out
   - Throw
+  - SpeedPowerUp
+  - ShootPowerUp
   layers:
   - Default
   - TransparentFX
@@ -19,7 +21,7 @@ TagManager:
   - Ground
   - Water
   - UI
-  - 
+  - Active Player
   - 
   - 
   - 

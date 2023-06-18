@@ -84,6 +84,13 @@ MonoBehaviour:
   shootingPower: 500
   passingPower: 5000
   players: []
+  speedPowerEffect: {fileID: 3744133877081091469, guid: a2a060732547fe64581bb0cb3c2bdf1d, type: 3}
+  speedEffect: {fileID: 0}
+  shootPowerEffect: {fileID: 3744133877081091469, guid: 9a5cfff55fe0acf40a828be72ba619cb, type: 3}
+  shootEffect: {fileID: 0}
+  maxPower: 200
+  currentPower: 0
+  shootingBar: {fileID: 0}
 --- !u!143 &6666646064697673471
 CharacterController:
   m_ObjectHideFlags: 0

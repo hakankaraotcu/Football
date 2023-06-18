@@ -44,7 +44,8 @@ public class Ball : MonoBehaviour
             ballStickPosition = transformPlayer.GetChild(8);
             currentPlayer = value.GetComponent<Player>();
             lastPlayer = currentPlayer;
-            currentPlayer.MakePlayerHuman();
+            if(currentPlayer.team == Team.Red) currentPlayer.MakePlayerHuman();
+            GameManager.GetInstance().ballState = currentPlayer.team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
         }
     }
 

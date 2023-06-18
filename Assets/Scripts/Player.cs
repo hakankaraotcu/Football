@@ -12,13 +12,17 @@ public class Player : MonoBehaviour
 
     [Header("Movement")]
     [SerializeField] private float walkingSpeed;
-    [SerializeField] private float runningSpeed;
+    [SerializeField] public float runningSpeed;
 
     [Header("Shooting")]
     [SerializeField] private float shootingPower;
 
     [Header("Passing")]
     [SerializeField] private float passingPower;
+
+
+    [Header("Range")]
+    [SerializeField] private float opponentScanRange;
 
     private const float gravity = -9.81f;
     private float shootingForce;
@@ -32,12 +36,26 @@ public class Player : MonoBehaviour
 
     private Ball ball;
 
-    public Player[] players;
+    public Player[] allyPlayers;
+    public Player[] opponentPlayers;
 
     private Animator animator;
     private CharacterController controller;
 
     private GameObject activenessArrow;
+
+    public Transform defendZone;
+    public Transform attackZone;
+
+    public GameObject speedPowerEffect;
+    public GameObject speedEffect;
+    public GameObject shootPowerEffect;
+    public GameObject shootEffect;
+
+    [SerializeField] float maxPower;
+    [SerializeField] float currentPower;
+
+    public ShootingBar shootingBar;
 
     public Ball Ball { get => ball; set => ball = value; }
 
@@ -45,7 +63,7 @@ public class Player : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         controller = GetComponent<CharacterController>();
-        players = FindObjectsOfType<Player>().Where(p => p != this && p.team == this.team).ToArray();
+
         activenessArrow = transform.GetChild(9).gameObject;
 
         switch (playerType)
@@ -62,6 +80,8 @@ public class Player : MonoBehaviour
     private void Start()
     {
         canWalk = true;
+        allyPlayers = FindObjectsOfType<Player>().Where(p => p != this && p.team == this.team).ToArray();
+        opponentPlayers = FindObjectsOfType<Player>().Where(p => p != this && p.team != this.team).ToArray();
     }
 
     private void Update()
@@ -71,6 +91,16 @@ public class Player : MonoBehaviour
             case PlayerType.Human:
                 if (GameManager.GetInstance().controlable)
                 {
+                    if (speedEffect != null)
+                    {
+                        Transform effectTransform = speedEffect.transform;
+                        effectTransform.position = gameObject.transform.position;
+                    }
+                    else if (shootEffect != null)
+                    {
+                        Transform effectTransform = shootEffect.transform;
+                        effectTransform.position = gameObject.transform.position;
+                    }
                     if (canWalk) MoveAndLook();
                     Shoot();
                     Pass();
@@ -78,6 +108,37 @@ public class Player : MonoBehaviour
                 }
                 break;
             case PlayerType.AI:
+                switch (GameManager.GetInstance().ballState)
+                {
+                    case BallState.Free:
+                        Player nearestPlayer = GameManager.GetInstance().FindClosestPlayerToBall();
+                        if (nearestPlayer == this)
+                        {
+                            AIGoBall();
+                            AIGetBall();
+                        }
+                        break;
+                    case BallState.RedTeam:
+                        if (team == Team.Red)
+                        {
+                            AIAttackZone();
+                        }
+                        else
+                        {
+                            AIDefendZone();
+                        }
+                        break;
+                    case BallState.BlueTeam:
+                        if (team == Team.Blue)
+                        {
+                            AIAttackZone();
+                        }
+                        else
+                        {
+                            AIDefend();
+                        }
+                        break;
+                }
                 break;
         }
     }
@@ -89,7 +150,9 @@ public class Player : MonoBehaviour
         {
             FindBall().GetComponent<Ball>().IsStickToPlayer = true;
             FindBall().GetComponent<Ball>().TransformPlayer = transform;
+            GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
             this.ball = FindBall().GetComponent<Ball>();
+            ball.GetComponent<TrailRenderer>().enabled = false;
         }
     }
 
@@ -114,12 +177,19 @@ public class Player : MonoBehaviour
         {
             if (Input.GetKey(KeyCode.D))
             {
-                shootingForce += Time.deltaTime * shootingPower;
+                if (currentPower < maxPower)
+                {
+                    currentPower++;
+                    shootingForce++;
+                }
+                //shootingForce += Time.deltaTime * shootingPower;
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
+                currentPower = 0;
                 StartCoroutine(ShootAnimationEvent());
             }
+            GameObject.Find("ShootBar").GetComponent<ShootingBar>().SetPower(currentPower);
         }
         else
         {
@@ -143,11 +213,12 @@ public class Player : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.S))
                 {
-                    Vector3 direction = DirectionTo(targetPlayer);
+                    Vector3 direction = DirectionToPlayer(targetPlayer);
 
                     this.MakePlayerAI();
                     ball.IsStickToPlayer = false;
                     ball.GetComponent<Rigidbody>().AddForce(direction * passingPower);
+                    GameManager.GetInstance().ballState = BallState.Free;
                     ball.TransformPlayer = targetPlayer.transform;
                     ball = null;
                 }
@@ -157,12 +228,18 @@ public class Player : MonoBehaviour
 
     private Player FindPlayerInDirection(Vector3 direction)
     {
-        return players.OrderBy(p => Vector3.Angle(direction, DirectionTo(p))).FirstOrDefault();
+        return allyPlayers.OrderBy(p => Vector3.Angle(direction, DirectionToPlayer(p))).FirstOrDefault();
     }
 
-    private Vector3 DirectionTo(Player p)
+    private Vector3 DirectionToPlayer(Player p)
     {
         return Vector3.Normalize(p.transform.position - ball.transform.position);
+    }
+
+    
+    private Vector3 DirectionToBall()
+    {
+        return Vector3.Normalize(GameManager.GetInstance().Ball.transform.position - transform.position);
     }
 
     public void MakePlayerAI()
@@ -178,6 +255,7 @@ public class Player : MonoBehaviour
     {
         playerType = PlayerType.Human;
         gameObject.tag = "Active Player";
+        gameObject.layer = LayerMask.NameToLayer("Active Player");
         activenessArrow.SetActive(true);
     }
 
@@ -188,6 +266,7 @@ public class Player : MonoBehaviour
         animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 1f);
         yield return new WaitForSeconds(0.4f);
         Vector3 target = transform.forward + transform.up * 0.07f;
+        ball.GetComponent<TrailRenderer>().enabled = true;
         ball.GetComponent<Rigidbody>().AddForce(target * shootingForce, ForceMode.Impulse);
         shootingForce = 0f;
         ball.IsStickToPlayer = false;
@@ -199,6 +278,119 @@ public class Player : MonoBehaviour
     private GameObject FindBall()
     {
         return GameManager.GetInstance().Ball;
+    }
+
+    public void PowerUpSpeed(float multiplier, float duration)
+    {
+        StartCoroutine(IncreaseDecreaseSpeed(multiplier, duration));
+    }
+
+    IEnumerator IncreaseDecreaseSpeed(float multiplier, float duration)
+    {
+        speedEffect = Instantiate(speedPowerEffect, transform.position, transform.rotation);
+
+        runningSpeed *= multiplier;
+
+        yield return new WaitForSeconds(duration);
+
+        Destroy(speedEffect);
+
+        runningSpeed /= multiplier;
+    }
+
+    public void PowerUpShoot(float multiplier, float duration)
+    {
+        StartCoroutine(IncreaseDecreaseShoot(multiplier, duration));
+    }
+
+    IEnumerator IncreaseDecreaseShoot(float multiplier, float duration)
+    {
+        shootEffect = Instantiate(shootPowerEffect, transform.position, transform.rotation);
+
+        shootingPower *= multiplier;
+
+        yield return new WaitForSeconds(duration);
+
+        Destroy(shootEffect);
+
+        shootingPower /= multiplier;
+    }
+
+    private void AIGoBall()
+    {
+        animator.SetBool("Walk", true);
+        Vector3 direction = DirectionToBall().normalized;
+        direction.y = gravity;
+        Vector3 rotation = DirectionToBall();
+        controller.Move(direction * Time.deltaTime * walkingSpeed); 
+        transform.LookAt(transform.position + rotation);
+    }
+
+    private void AIGetBall()
+    {
+        float distanceToBall = Vector3.Distance(transform.position, FindBall().transform.position);
+        if (distanceToBall < 1f)
+        {
+            FindBall().GetComponent<Ball>().IsStickToPlayer = true;
+            FindBall().GetComponent<Ball>().TransformPlayer = transform;
+            GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
+            this.ball = FindBall().GetComponent<Ball>();
+        }
+    }
+
+    private void AIAttackZone()
+    {
+
+        animator.SetBool("Walk", true);
+        //Debug.Log(gameObject.name + " Attack Position: " + direction);
+        Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            animator.SetBool("Walk", false);
+        }
+    }
+
+    private void AIDefend()
+    {
+        Collider[] playersArround = Physics.OverlapSphere(transform.position, opponentScanRange, LayerMask.GetMask("Active Player"));
+
+        if(playersArround.Length > 0 && playersArround[0].gameObject != this.gameObject && playersArround[0].gameObject.GetComponent<Player>().team != team)
+        {
+            Debug.Log("Opponent Found" + playersArround[0].gameObject.name);
+            AIPressOpponent(playersArround[0].gameObject);
+        }
+        else
+        {
+            AIDefendZone();
+        }
+    }
+
+    private void AIDefendZone()
+    {
+        animator.SetBool("Walk", true);
+        Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            animator.SetBool("Walk", false);
+        }
+    }
+
+    private void AIPressOpponent(GameObject player)
+    {
+        animator.SetBool("Walk", true);
+        Vector3 direction = player.transform.position;
+        transform.position = Vector3.Lerp(transform.position, direction, Time.deltaTime * walkingSpeed);
+        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            animator.SetBool("Walk", false);
+        }
+    }
+
+    private void OnDrawGizmosSelected() {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, opponentScanRange);
     }
 
 }

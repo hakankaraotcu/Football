@@ -341,12 +341,18 @@ public class Player : MonoBehaviour
         float distanceToBall = Vector3.Distance(transform.position, FindBall().transform.position);
         if (distanceToBall < 1f)
         {
-            FindBall().GetComponent<Ball>().IsStickToPlayer = true;
-            FindBall().GetComponent<Ball>().TransformPlayer = transform;
-            GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
-            this.ball = FindBall().GetComponent<Ball>();
+            AITakeBall();
         }
     }
+
+    private void AITakeBall()
+    {
+        FindBall().GetComponent<Ball>().IsStickToPlayer = true;
+        FindBall().GetComponent<Ball>().TransformPlayer = transform;
+        GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
+        this.ball = FindBall().GetComponent<Ball>();
+    }
+
 
     private void AIAttackZone()
     {
@@ -369,9 +375,9 @@ public class Player : MonoBehaviour
             animator.SetBool("Walk", false);
         }
 
-        if(defendZone.GetComponent<Zone>().activePlayer != null)
+        if (defendZone.GetComponent<Zone>().activePlayer != null)
         {
-            if(defendZone.GetComponent<Zone>().activePlayer != this && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().team != this.team && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().ball != null)
+            if (defendZone.GetComponent<Zone>().activePlayer != this && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().team != this.team && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().ball != null)
             {
                 AIPressOpponent(defendZone.GetComponent<Zone>().activePlayer.gameObject);
             }
@@ -383,10 +389,19 @@ public class Player : MonoBehaviour
         animator.SetBool("Walk", true);
         Vector3 direction = player.transform.position;
         transform.LookAt(direction);
-        transform.position = Vector3.MoveTowards(transform.position, direction, 0.07f *  walkingSpeed);
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.07f * walkingSpeed);
         if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
+        }
+
+        if (Vector3.Distance(transform.position, direction) < 0.5f)
+        {
+            if (player.GetComponent<Player>().ball != null && Random.Range(0, 100) < 10)
+            {
+                player.GetComponent<Player>().ball = null;
+                AITakeBall();
+            }
         }
     }
 

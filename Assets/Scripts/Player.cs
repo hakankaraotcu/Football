@@ -135,7 +135,7 @@ public class Player : MonoBehaviour
                         }
                         else
                         {
-                            AIDefend();
+                            AIDefendZone();
                         }
                         break;
                 }
@@ -236,7 +236,7 @@ public class Player : MonoBehaviour
         return Vector3.Normalize(p.transform.position - ball.transform.position);
     }
 
-    
+
     private Vector3 DirectionToBall()
     {
         return Vector3.Normalize(GameManager.GetInstance().Ball.transform.position - transform.position);
@@ -249,6 +249,7 @@ public class Player : MonoBehaviour
         animator.SetBool("Walk", false);
         animator.SetBool("Run", false);
         activenessArrow.SetActive(false);
+        gameObject.layer = LayerMask.NameToLayer("Default");
     }
 
     public void MakePlayerHuman()
@@ -316,13 +317,22 @@ public class Player : MonoBehaviour
         shootingPower /= multiplier;
     }
 
+    public Vector3 RandomPointInBound(Bounds bounds)
+    {
+        return new Vector3(
+            Random.Range(bounds.min.x, bounds.max.x),
+            0,
+            Random.Range(bounds.min.z, bounds.max.z)
+        );
+    }
+
     private void AIGoBall()
     {
         animator.SetBool("Walk", true);
         Vector3 direction = DirectionToBall().normalized;
         direction.y = gravity;
         Vector3 rotation = DirectionToBall();
-        controller.Move(direction * Time.deltaTime * walkingSpeed); 
+        controller.Move(direction * Time.deltaTime * walkingSpeed);
         transform.LookAt(transform.position + rotation);
     }
 
@@ -340,29 +350,12 @@ public class Player : MonoBehaviour
 
     private void AIAttackZone()
     {
-
         animator.SetBool("Walk", true);
-        //Debug.Log(gameObject.name + " Attack Position: " + direction);
         Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
-        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
-        }
-    }
-
-    private void AIDefend()
-    {
-        Collider[] playersArround = Physics.OverlapSphere(transform.position, opponentScanRange, LayerMask.GetMask("Active Player"));
-
-        if(playersArround.Length > 0 && playersArround[0].gameObject != this.gameObject && playersArround[0].gameObject.GetComponent<Player>().team != team)
-        {
-            Debug.Log("Opponent Found" + playersArround[0].gameObject.name);
-            AIPressOpponent(playersArround[0].gameObject);
-        }
-        else
-        {
-            AIDefendZone();
         }
     }
 
@@ -371,9 +364,17 @@ public class Player : MonoBehaviour
         animator.SetBool("Walk", true);
         Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
-        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
+        }
+
+        if(defendZone.GetComponent<Zone>().activePlayer != null)
+        {
+            if(defendZone.GetComponent<Zone>().activePlayer != this && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().team != this.team && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().ball != null)
+            {
+                AIPressOpponent(defendZone.GetComponent<Zone>().activePlayer.gameObject);
+            }
         }
     }
 
@@ -381,14 +382,16 @@ public class Player : MonoBehaviour
     {
         animator.SetBool("Walk", true);
         Vector3 direction = player.transform.position;
-        transform.position = Vector3.Lerp(transform.position, direction, Time.deltaTime * walkingSpeed);
-        if(Vector3.Distance(transform.position, direction) < 0.1f)
+        transform.LookAt(direction);
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.07f *  walkingSpeed);
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
         }
     }
 
-    private void OnDrawGizmosSelected() {
+    private void OnDrawGizmosSelected()
+    {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, opponentScanRange);
     }

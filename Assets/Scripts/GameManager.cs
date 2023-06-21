@@ -214,26 +214,17 @@ public class GameManager : MonoBehaviour
 
     public void Out(Player lastTouchedPlayer)
     {
-        if (lastTouchedPlayer.team == Team.Red)
-        {
-            Invoke(nameof(StartBlueTeam), 1f);
-        }
-        else
-        {
-            Invoke(nameof(StartRedTeam), 1f);
-        }
+        isRedTeamStarting = lastTouchedPlayer.team == Team.Red ? false : true;
+
+        Invoke(nameof(PlacePlayers), 1f);
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
-        if (lastTouchedPlayer.team == Team.Red)
-        {
-            Invoke(nameof(StartBlueTeam), 1f);
-        }
-        else
-        {
-            Invoke(nameof(StartRedTeam), 1f);
-        }
+
+        isRedTeamStarting = lastTouchedPlayer.team == Team.Red ? false : true;
+
+        Invoke(nameof(PlacePlayers), 1f);
     }
 
     public void ScoreGoal(GoalSituation situation)

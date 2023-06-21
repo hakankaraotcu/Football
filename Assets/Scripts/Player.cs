@@ -35,11 +35,13 @@ public class Player : MonoBehaviour
     private int aNIMATION_LAYER_DANCING = 2;
     private int aNIMATION_LAYER_DISAPPOINTED = 3;
     private int aNIMATION_LAYER_JOGGING = 4;
+    private int aNIMATION_LAYER_TACKLE = 5;
 
     private Vector3 direction;
     private Vector3 rotation;
 
     private bool canWalk;
+    private bool changePlayerAuto;
 
     private Ball ball;
 
@@ -81,6 +83,7 @@ public class Player : MonoBehaviour
     public int ANIMATION_LAYER_DANCING { get => aNIMATION_LAYER_DANCING; private set => aNIMATION_LAYER_DANCING = value; }
     public int ANIMATION_LAYER_DISAPPOINTED { get => aNIMATION_LAYER_DISAPPOINTED; private set => aNIMATION_LAYER_DISAPPOINTED = value; }
     public int ANIMATION_LAYER_JOGGING { get => aNIMATION_LAYER_JOGGING; private set => aNIMATION_LAYER_JOGGING = value; }
+    public int ANIMATION_LAYER_TACKLE { get => aNIMATION_LAYER_TACKLE; private set => aNIMATION_LAYER_TACKLE = value; }
 
     private void Awake()
     {
@@ -103,12 +106,18 @@ public class Player : MonoBehaviour
     private void Start()
     {
         canWalk = true;
+        changePlayerAuto = true;
         allyPlayers = FindObjectsOfType<Player>().Where(p => p != this && p.team == this.team).ToArray();
         opponentPlayers = FindObjectsOfType<Player>().Where(p => p != this && p.team != this.team).ToArray();
     }
 
     private void Update()
     {
+        if (ball != null)
+        {
+            GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
+        }
+
         switch (playerType)
         {
             case PlayerType.Human:
@@ -126,8 +135,10 @@ public class Player : MonoBehaviour
                     }
                     if (canWalk) MoveAndLook();
                     Shoot();
-                    PassOrChangeActivePlayer();
+                    Pass();
                     GetBall();
+                    ChangeActivePlayer();
+                    Tackle();
                 }
                 break;
             case PlayerType.AI:
@@ -176,7 +187,7 @@ public class Player : MonoBehaviour
         {
             FindBall().GetComponent<Ball>().IsStickToPlayer = true;
             FindBall().GetComponent<Ball>().TransformPlayer = transform;
-            GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
+            //GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
             this.ball = FindBall().GetComponent<Ball>();
             ball.GetComponent<TrailRenderer>().enabled = false;
         }
@@ -212,6 +223,7 @@ public class Player : MonoBehaviour
             }
             if (Input.GetKeyUp(KeyCode.D))
             {
+                GameManager.GetInstance().ballState = BallState.Free;
                 currentPower = 0;
                 StartCoroutine(ShootAnimationEvent());
             }
@@ -223,7 +235,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void PassOrChangeActivePlayer()
+    private void Pass()
     {
         if (ball != null)
         {
@@ -239,24 +251,47 @@ public class Player : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.S))
                 {
-                    Debug.Log("Pass");
                     Vector3 direction = DirectionToPlayer(targetPlayer);
 
                     this.MakePlayerAI();
                     ball.IsStickToPlayer = false;
                     ball.GetComponent<Rigidbody>().AddForce(direction * passingPower);
-                    GameManager.GetInstance().ballState = BallState.Free;
                     ball.TransformPlayer = targetPlayer.transform;
                     ball = null;
+                    GameManager.GetInstance().ballState = BallState.Free;
                 }
             }
         }
-        else
+    }
+
+    private void Tackle()
+    {
+        if (ball == null)
         {
-            if (Input.GetKeyDown(KeyCode.S))
+            if (Input.GetKeyDown(KeyCode.A))
             {
-                Debug.Log("Change Active Player");
+                Debug.Log("Tackle");
+                StartCoroutine(TackleAnimationEvent());
+            }
+        }
+    }
+
+
+    private void ChangeActivePlayer()
+    {
+        if (ball == null)
+        {
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
                 Player allyPlayer = allyPlayers.OrderBy(p => Vector3.Distance(p.transform.position, teamGoal.transform.position)).FirstOrDefault();
+                this.MakePlayerAI();
+                allyPlayer.MakePlayerHuman();
+            }
+            else if (changePlayerAuto)
+            {
+                changePlayerAuto = false;
+                StartCoroutine(ChangePlayerAuto());
+                Player allyPlayer = allyPlayers.OrderBy(p => Vector3.Distance(p.transform.position, FindBall().transform.position)).FirstOrDefault();
                 this.MakePlayerAI();
                 allyPlayer.MakePlayerHuman();
             }
@@ -276,8 +311,25 @@ public class Player : MonoBehaviour
         shootingForce = 0f;
         ball.IsStickToPlayer = false;
         ball = null;
+        GameManager.GetInstance().ballState = BallState.Free;
         yield return new WaitForSeconds(0.5f);
         canWalk = true;
+    }
+
+    private IEnumerator TackleAnimationEvent()
+    {
+        canWalk = false;
+        animator.Play("Soccer Tackle", ANIMATION_LAYER_TACKLE, 0f);
+        animator.SetLayerWeight(ANIMATION_LAYER_TACKLE, 1f);
+        yield return new WaitForSeconds(1.8f);
+        canWalk = true;
+        ResetAnimator();
+    }
+
+    private IEnumerator ChangePlayerAuto()
+    {
+        yield return new WaitForSeconds(2.5f);
+        changePlayerAuto = true;
     }
 
     private void AIGoBall()
@@ -335,7 +387,6 @@ public class Player : MonoBehaviour
 
         Collider[] opponent = Physics.OverlapSphere(transform.position, scanRange);
         opponent = opponent.Where(c => c.GetComponent<Player>() != null && c.GetComponent<Player>().team != team).ToArray();
-        Debug.Log("I have " + opponent.Length + " opponents in my scan range");
         if (opponent.Length > 0 && this.ball != null)
         {
             switch (this.ball == null)
@@ -368,8 +419,8 @@ public class Player : MonoBehaviour
         this.MakePlayerAI();
         ball.IsStickToPlayer = false;
         ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
-        GameManager.GetInstance().ballState = BallState.Free;
         ball = null;
+        GameManager.GetInstance().ballState = BallState.Free;
     }
 
     private void AIPassToTeammate(GameObject teammate)
@@ -381,8 +432,8 @@ public class Player : MonoBehaviour
         this.MakePlayerAI();
         ball.IsStickToPlayer = false;
         ball.GetComponent<Rigidbody>().AddForce(direction * aiPassPower);
-        GameManager.GetInstance().ballState = BallState.Free;
         ball = null;
+        GameManager.GetInstance().ballState = BallState.Free;
     }
 
     private void AIDefendZone()
@@ -444,11 +495,11 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
         Vector3 direction = (opponentGoal.transform.position - transform.position);
         ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
-        GameManager.GetInstance().ballState = BallState.Free;
         ball.GetComponent<TrailRenderer>().enabled = true;
         shootingForce = 0f;
         ball.IsStickToPlayer = false;
         ball = null;
+        GameManager.GetInstance().ballState = BallState.Free;
         yield return new WaitForSeconds(0.5f);
         this.MakePlayerAI();
         canWalk = true;
@@ -562,6 +613,7 @@ public class Player : MonoBehaviour
         animator.SetLayerWeight(ANIMATION_LAYER_DANCING, 0);
         animator.SetLayerWeight(ANIMATION_LAYER_DISAPPOINTED, 0);
         animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0);
+        animator.SetLayerWeight(ANIMATION_LAYER_TACKLE, 0);
     }
 
     private void OnDrawGizmosSelected()

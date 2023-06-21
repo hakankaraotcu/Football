@@ -52,7 +52,6 @@ public class Ball : MonoBehaviour
                 }
                 currentPlayer.MakePlayerHuman();
             }
-            GameManager.GetInstance().ballState = currentPlayer.team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
         }
     }
 

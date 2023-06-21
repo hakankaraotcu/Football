@@ -1653,7 +1653,7 @@ GameObject:
   - component: {fileID: 664519889}
   - component: {fileID: 664519891}
   - component: {fileID: 664519890}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: GoalDetectorRight
   m_TagString: RightGoal
   m_Icon: {fileID: 0}
@@ -2280,7 +2280,7 @@ GameObject:
   - component: {fileID: 1029129076}
   - component: {fileID: 1029129078}
   - component: {fileID: 1029129077}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GoalDetectorLeft
   m_TagString: LeftGoal
   m_Icon: {fileID: 0}

@@ -214,28 +214,45 @@ public class GameManager : MonoBehaviour
 
     public void Out(Player lastTouchedPlayer)
     {
-        Debug.Log("Out");
-        Invoke(nameof(PlacePlayers), 1f);
+        if (lastTouchedPlayer.team == Team.Red)
+        {
+            Invoke(nameof(StartBlueTeam), 1f);
+        }
+        else
+        {
+            Invoke(nameof(StartRedTeam), 1f);
+        }
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
-        Debug.Log("Throw");
-        Invoke(nameof(PlacePlayers), 1f);
+        if (lastTouchedPlayer.team == Team.Red)
+        {
+            Invoke(nameof(StartBlueTeam), 1f);
+        }
+        else
+        {
+            Invoke(nameof(StartRedTeam), 1f);
+        }
     }
 
-    public void ScoreGoal(Player lastTouchedPlayer)
+    public void ScoreGoal(GoalSituation situation)
     {
-        switch (lastTouchedPlayer.team)
+        switch (situation)
         {
-            case Team.Red:
+            case GoalSituation.RedTeam:
                 StartCoroutine(OnRedTeamScored());
                 break;
-            case Team.Blue:
+            case GoalSituation.BlueTeam:
+                StartCoroutine(OnBlueTeamScored());
+                break;
+            case GoalSituation.BlueOwn:
+                StartCoroutine(OnRedTeamScored());
+                break;
+            case GoalSituation.RedOwn:
                 StartCoroutine(OnBlueTeamScored());
                 break;
         }
-
         OnGoalScored();
     }
 

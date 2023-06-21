@@ -1667,13 +1667,17 @@ MonoBehaviour:
   team: 0
   walkingSpeed: 7
   runningSpeed: 14
-  shootingPower: 500
+  shootingPower: 5000
   passingPower: 5000
-  opponentScanRange: 5
+  scanRange: 3.5
+  aiPassPower: 4300
+  aiShootPower: 200
   allyPlayers: []
   opponentPlayers: []
   defendZone: {fileID: 0}
   attackZone: {fileID: 0}
+  enemyZone: {fileID: 0}
+  goal: {fileID: 0}
   speedPowerEffect: {fileID: 3744133877081091469, guid: a2a060732547fe64581bb0cb3c2bdf1d, type: 3}
   speedEffect: {fileID: 0}
   shootPowerEffect: {fileID: 3744133877081091469, guid: 9a5cfff55fe0acf40a828be72ba619cb, type: 3}

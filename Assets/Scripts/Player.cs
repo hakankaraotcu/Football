@@ -20,6 +20,14 @@ public class Player : MonoBehaviour
     [Header("Passing")]
     [SerializeField] private float passingPower;
 
+    [Header("Range")]
+    [SerializeField] private float scanRange;
+
+    [Header("AI")]
+    [SerializeField] private float aiPassPower;
+    [SerializeField] private float aiShootPower;
+
+
     private const float gravity = -9.81f;
     private float shootingForce;
 
@@ -42,6 +50,8 @@ public class Player : MonoBehaviour
 
     public Transform defendZone;
     public Transform attackZone;
+    public Transform enemyZone;
+    public Transform goal;
 
     public GameObject speedPowerEffect;
     public GameObject speedEffect;
@@ -110,6 +120,7 @@ public class Player : MonoBehaviour
                         Player nearestPlayer = GameManager.GetInstance().FindClosestPlayerToBall();
                         if (nearestPlayer == this)
                         {
+                            Debug.Log("I am going ball" + this.name);
                             AIGoBall();
                             AIGetBall();
                         }
@@ -360,6 +371,67 @@ public class Player : MonoBehaviour
         {
             animator.SetBool("Walk", false);
         }
+
+        Collider[] opponent = Physics.OverlapSphere(transform.position, scanRange);
+        opponent = opponent.Where(c => c.gameObject.tag == "Active Player" || c.gameObject.tag == "Deavtive Player" && c.GetComponent<Player>().team != team).ToArray();
+        if (opponent.Length > 0 && this.ball != null)
+        {
+            switch (this.ball == null)
+            {
+                case true:
+                    if (opponent[0].GetComponent<Player>().ball != null)
+                    {
+                        AIPressOpponent(opponent[0].gameObject);
+                    }
+                    break;
+                case false:
+                    GameObject teammate = FindTeammateInAttackZone();
+                    float possiblities = Random.Range(0, 15);
+                    if (possiblities >= 0 && possiblities < 1)
+                    {
+                        AIPassToTeammate(teammate);
+                    }
+                    else if (possiblities >= 1 && possiblities < 6)
+                    {
+                        if (IsInAttackZone()) AIShootToGoal();
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void AIShootToGoal()
+    {
+        Vector3 direction = (goal.transform.position - transform.position);
+        this.MakePlayerAI();
+        ball.IsStickToPlayer = false;
+        ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
+        GameManager.GetInstance().ballState = BallState.Free;
+        ball = null;
+    }
+
+    private GameObject FindTeammateInAttackZone()
+    {
+        GameObject x = allyPlayers.OrderBy(p => Vector3.Distance(p.transform.position, transform.position)).FirstOrDefault().gameObject;
+        return x;
+    }
+
+    private void AIPassToTeammate(GameObject teammate)
+    {
+        Player targetPlayer = teammate.GetComponent<Player>();
+
+        Vector3 direction = (targetPlayer.transform.position - transform.position).normalized;
+
+        this.MakePlayerAI();
+        ball.IsStickToPlayer = false;
+        ball.GetComponent<Rigidbody>().AddForce(direction * aiPassPower);
+        GameManager.GetInstance().ballState = BallState.Free;
+        ball = null;
+    }
+
+    private Vector3 FindClosestTeammate(Vector3 position)
+    {
+        return allyPlayers.OrderBy(p => Vector3.Distance(position, p.transform.position)).FirstOrDefault().transform.position;
     }
 
     private void AIDefendZone()
@@ -395,11 +467,22 @@ public class Player : MonoBehaviour
 
         if (Vector3.Distance(transform.position, direction) < 0.5f)
         {
-            if (player.GetComponent<Player>().ball != null && Random.Range(0, 100) < 10)
+            if (player.GetComponent<Player>().ball != null && Random.Range(0, 100) < 8)
             {
                 player.GetComponent<Player>().ball = null;
                 AITakeBall();
             }
         }
+    }
+
+    private bool IsInAttackZone()
+    {
+        return enemyZone.GetComponent<Collider>().bounds.Contains(transform.position);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, scanRange);
     }
 }

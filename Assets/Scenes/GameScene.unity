@@ -374,6 +374,10 @@ MonoBehaviour:
   redTeamDefend: {fileID: 940242223}
   blueTeamAttack: {fileID: 325130351}
   blueTeamDefend: {fileID: 419443969}
+  redZone: {fileID: 1353879286}
+  blueZone: {fileID: 2060330568}
+  redTeamGoal: {fileID: 1029129076}
+  blueTeamGoal: {fileID: 664519889}
   characters:
   - {fileID: 7830528589956546646, guid: c419d1aa57c59d9409dad0a456e17298, type: 3}
   - {fileID: 85378445277791800, guid: 99dfb09e149fc194693e7bdd35040237, type: 3}
@@ -2948,6 +2952,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1353879286}
+  - component: {fileID: 1353879287}
   m_Layer: 0
   m_Name: Red Team
   m_TagString: Untagged
@@ -2972,6 +2977,19 @@ Transform:
   m_Father: {fileID: 1270685199}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1353879287
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353879285}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 10.072322, y: 1, z: 10.717479}
+  m_Center: {x: 5.0356665, y: 0, z: -0.04540825}
 --- !u!1 &1359005187
 GameObject:
   m_ObjectHideFlags: 0
@@ -5338,6 +5356,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2060330568}
+  - component: {fileID: 2060330569}
   m_Layer: 0
   m_Name: Blue Team
   m_TagString: Untagged
@@ -5362,6 +5381,19 @@ Transform:
   m_Father: {fileID: 1270685199}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2060330569
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2060330567}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 10.049719, y: 1, z: 10.669571}
+  m_Center: {x: -5.045537, y: 0, z: -0.0000012715657}
 --- !u!1 &2063568081
 GameObject:
   m_ObjectHideFlags: 0

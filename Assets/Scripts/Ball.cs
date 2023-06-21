@@ -44,7 +44,14 @@ public class Ball : MonoBehaviour
             ballStickPosition = transformPlayer.GetChild(8);
             currentPlayer = value.GetComponent<Player>();
             lastPlayer = currentPlayer;
-            if(currentPlayer.team == Team.Red) currentPlayer.MakePlayerHuman();
+            if (currentPlayer.team == Team.Red)
+            {
+                foreach (Player player in currentPlayer.allyPlayers)
+                {
+                    player.MakePlayerAI();
+                }
+                currentPlayer.MakePlayerHuman();
+            }
             GameManager.GetInstance().ballState = currentPlayer.team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
         }
     }
@@ -52,7 +59,7 @@ public class Ball : MonoBehaviour
 
     private void Update()
     {
-        if(isStickToPlayer)
+        if (isStickToPlayer)
         {
             Vector2 currentLocation = new Vector2(transform.position.x, transform.position.z);
             speed = Vector2.Distance(currentLocation, previousLocation) / Time.deltaTime;

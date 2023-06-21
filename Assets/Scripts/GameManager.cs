@@ -48,6 +48,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform redTeamDefend;
     [SerializeField] private Transform blueTeamAttack;
     [SerializeField] private Transform blueTeamDefend;
+    [SerializeField] private Transform redZone;
+    [SerializeField] private Transform blueZone;
+
+    [Header("Goal Zones")]
+    [SerializeField] private Transform redTeamGoal;
+    [SerializeField] private Transform blueTeamGoal;
 
     [Header("Characters")]
     [SerializeField] private GameObject[] characters;
@@ -103,6 +109,8 @@ public class GameManager : MonoBehaviour
             character.GetComponent<Player>().team = Team.Red;
             character.GetComponent<Player>().attackZone = redTeamAttack.GetChild(i);
             character.GetComponent<Player>().defendZone = redTeamDefend.GetChild(i);
+            character.GetComponent<Player>().enemyZone = blueZone;
+            character.GetComponent<Player>().goal = blueTeamGoal;
             redTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             if (i == 0) character.GetComponent<Player>().MakePlayerHuman();
@@ -117,6 +125,8 @@ public class GameManager : MonoBehaviour
             character.GetComponent<Player>().team = Team.Blue;
             character.GetComponent<Player>().attackZone = blueTeamAttack.GetChild(i);
             character.GetComponent<Player>().defendZone = blueTeamDefend.GetChild(i);
+            character.GetComponent<Player>().enemyZone = redZone;
+            character.GetComponent<Player>().goal = redTeamGoal;
             blueTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             temp.RemoveAt(randomIndex);

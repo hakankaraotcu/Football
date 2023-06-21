@@ -34,6 +34,7 @@ public class Player : MonoBehaviour
     private int aNIMATION_LAYER_SHOOTING = 1;
     private int aNIMATION_LAYER_DANCING = 2;
     private int aNIMATION_LAYER_DISAPPOINTED = 3;
+    private int aNIMATION_LAYER_JOGGING = 4;
 
     private Vector3 direction;
     private Vector3 rotation;
@@ -68,9 +69,10 @@ public class Player : MonoBehaviour
 
     public Ball Ball { get => ball; set => ball = value; }
 
-    public int ANIMATION_LAYER_SHOOTING { get => aNIMATION_LAYER_SHOOTING;  private set => aNIMATION_LAYER_SHOOTING = value; }
+    public int ANIMATION_LAYER_SHOOTING { get => aNIMATION_LAYER_SHOOTING; private set => aNIMATION_LAYER_SHOOTING = value; }
     public int ANIMATION_LAYER_DANCING { get => aNIMATION_LAYER_DANCING; private set => aNIMATION_LAYER_DANCING = value; }
     public int ANIMATION_LAYER_DISAPPOINTED { get => aNIMATION_LAYER_DISAPPOINTED; private set => aNIMATION_LAYER_DISAPPOINTED = value; }
+    public int ANIMATION_LAYER_JOGGING { get => aNIMATION_LAYER_JOGGING; private set => aNIMATION_LAYER_JOGGING = value; }
 
     private void Awake()
     {
@@ -382,6 +384,7 @@ public class Player : MonoBehaviour
 
     private void AIAttackZone()
     {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
         animator.SetBool("Walk", true);
         Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
@@ -389,6 +392,12 @@ public class Player : MonoBehaviour
         if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
+            transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
+            bool forward = Random.Range(0, 2) == 0;
+            bool backward = Random.Range(0, 2) == 0;
+            animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
+            animator.SetBool("ForwardJog", forward);
+            animator.SetBool("BackwardJog", backward);
         }
 
         Collider[] opponent = Physics.OverlapSphere(transform.position, scanRange);
@@ -455,6 +464,7 @@ public class Player : MonoBehaviour
 
     private void AIDefendZone()
     {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
         animator.SetBool("Walk", true);
         Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
@@ -462,6 +472,14 @@ public class Player : MonoBehaviour
         if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
+            
+            transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
+            bool forward = Random.Range(0, 2) == 0;
+            bool backward = Random.Range(0, 2) == 0;
+            animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
+            animator.SetBool("ForwardJog", forward);
+            animator.SetBool("BackwardJog", backward);
+
         }
 
         if (defendZone.GetComponent<Zone>().activePlayer != null)
@@ -475,6 +493,7 @@ public class Player : MonoBehaviour
 
     private void AIPressOpponent(GameObject player)
     {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
         animator.SetBool("Walk", true);
         Vector3 direction = player.transform.position;
         transform.LookAt(direction);

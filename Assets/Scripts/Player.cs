@@ -67,7 +67,15 @@ public class Player : MonoBehaviour
 
     public ShootingBar shootingBar;
 
-    public Ball Ball { get => ball; set => ball = value; }
+    public Ball Ball
+    {
+        get => ball;
+        set
+        {
+            ball = value;
+            ResetAnimator();
+        }
+    }
 
     public int ANIMATION_LAYER_SHOOTING { get => aNIMATION_LAYER_SHOOTING; private set => aNIMATION_LAYER_SHOOTING = value; }
     public int ANIMATION_LAYER_DANCING { get => aNIMATION_LAYER_DANCING; private set => aNIMATION_LAYER_DANCING = value; }
@@ -231,6 +239,7 @@ public class Player : MonoBehaviour
             {
                 if (Input.GetKeyDown(KeyCode.S))
                 {
+                    Debug.Log("Pass");
                     Vector3 direction = DirectionToPlayer(targetPlayer);
 
                     this.MakePlayerAI();
@@ -254,39 +263,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    private Player FindPlayerInDirection(Vector3 direction)
-    {
-        return allyPlayers.OrderBy(p => Vector3.Angle(direction, DirectionToPlayer(p))).FirstOrDefault();
-    }
-
-    private Vector3 DirectionToPlayer(Player p)
-    {
-        return Vector3.Normalize(p.transform.position - ball.transform.position);
-    }
-
-
-    private Vector3 DirectionToBall()
-    {
-        return Vector3.Normalize(GameManager.GetInstance().Ball.transform.position - transform.position);
-    }
-
-    public void MakePlayerAI()
-    {
-        playerType = PlayerType.AI;
-        gameObject.tag = "Deactive Player";
-        animator.SetBool("Walk", false);
-        animator.SetBool("Run", false);
-        activenessArrow.SetActive(false);
-        gameObject.layer = LayerMask.NameToLayer("Default");
-    }
-
-    public void MakePlayerHuman()
-    {
-        playerType = PlayerType.Human;
-        gameObject.tag = "Active Player";
-        gameObject.layer = LayerMask.NameToLayer("Active Player");
-        activenessArrow.SetActive(true);
-    }
 
     private IEnumerator ShootAnimationEvent()
     {
@@ -303,6 +279,216 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         canWalk = true;
     }
+
+    private void AIGoBall()
+    {
+        animator.SetBool("Walk", true);
+        Vector3 direction = DirectionToBall().normalized;
+        direction.y = gravity;
+        Vector3 rotation = DirectionToBall();
+        controller.Move(direction * Time.deltaTime * walkingSpeed);
+        transform.LookAt(transform.position + rotation);
+    }
+
+    private void AIGetBall()
+    {
+        float distanceToBall = Vector3.Distance(transform.position, FindBall().transform.position);
+        if (distanceToBall < 1f)
+        {
+            AITakeBall();
+        }
+    }
+
+    private void AITakeBall()
+    {
+        FindBall().GetComponent<Ball>().IsStickToPlayer = true;
+        FindBall().GetComponent<Ball>().TransformPlayer = transform;
+        GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
+        this.ball = FindBall().GetComponent<Ball>();
+    }
+
+
+    private void AIAttackZone()
+    {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
+        animator.SetBool("Walk", true);
+        Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        transform.LookAt(direction);
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            if (this.ball == null)
+            {
+                animator.SetBool("Walk", false);
+                transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
+                bool forward = Random.Range(0, 2) == 0;
+                bool backward = Random.Range(0, 2) == 0;
+                animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
+                animator.SetBool("ForwardJog", forward);
+                animator.SetBool("BackwardJog", backward);
+            }
+            else
+            {
+                StartCoroutine(AIShootAnimationEvent());
+            }
+        }
+
+        Collider[] opponent = Physics.OverlapSphere(transform.position, scanRange);
+        opponent = opponent.Where(c => c.GetComponent<Player>() != null && c.GetComponent<Player>().team != team).ToArray();
+        Debug.Log("I have " + opponent.Length + " opponents in my scan range");
+        if (opponent.Length > 0 && this.ball != null)
+        {
+            switch (this.ball == null)
+            {
+                case true:
+                    if (opponent[0].GetComponent<Player>().ball != null)
+                    {
+                        AIPressOpponent(opponent[0].gameObject);
+                    }
+                    break;
+                case false:
+                    GameObject teammate = FindTeammateInAttackZone();
+                    float possiblities = Random.Range(0, 15);
+                    if (possiblities >= 0 && possiblities < 1)
+                    {
+                        AIPassToTeammate(teammate);
+                    }
+                    else if (possiblities >= 1 && possiblities < 6)
+                    {
+                        if (IsInAttackZone()) StartCoroutine(AIShootAnimationEvent());
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void AIShootToGoal()
+    {
+        Vector3 direction = (opponentGoal.transform.position - transform.position);
+        this.MakePlayerAI();
+        ball.IsStickToPlayer = false;
+        ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
+        GameManager.GetInstance().ballState = BallState.Free;
+        ball = null;
+    }
+
+    private void AIPassToTeammate(GameObject teammate)
+    {
+        Player targetPlayer = teammate.GetComponent<Player>();
+
+        Vector3 direction = (targetPlayer.transform.position - transform.position).normalized;
+
+        this.MakePlayerAI();
+        ball.IsStickToPlayer = false;
+        ball.GetComponent<Rigidbody>().AddForce(direction * aiPassPower);
+        GameManager.GetInstance().ballState = BallState.Free;
+        ball = null;
+    }
+
+    private void AIDefendZone()
+    {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
+        animator.SetBool("Walk", true);
+        Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        transform.LookAt(direction);
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            animator.SetBool("Walk", false);
+
+            transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
+            bool forward = Random.Range(0, 2) == 0;
+            bool backward = Random.Range(0, 2) == 0;
+            animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
+            animator.SetBool("ForwardJog", forward);
+            animator.SetBool("BackwardJog", backward);
+
+        }
+
+        if (defendZone.GetComponent<Zone>().activePlayer != null)
+        {
+            if (defendZone.GetComponent<Zone>().activePlayer != this && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().team != this.team && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().ball != null)
+            {
+                AIPressOpponent(defendZone.GetComponent<Zone>().activePlayer.gameObject);
+            }
+        }
+    }
+
+    private void AIPressOpponent(GameObject player)
+    {
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
+        animator.SetBool("Walk", true);
+        Vector3 direction = player.transform.position;
+        transform.LookAt(direction);
+        transform.position = Vector3.MoveTowards(transform.position, direction, 0.07f * walkingSpeed);
+        if (Vector3.Distance(transform.position, direction) < 0.1f)
+        {
+            animator.SetBool("Walk", false);
+        }
+
+        if (Vector3.Distance(transform.position, direction) < 0.5f)
+        {
+            if (player.GetComponent<Player>().ball != null && Random.Range(0, 100) < 8)
+            {
+                player.GetComponent<Player>().ball = null;
+                AITakeBall();
+            }
+        }
+    }
+
+    private IEnumerator AIShootAnimationEvent()
+    {
+        canWalk = false;
+        animator.Play("Shoot", ANIMATION_LAYER_SHOOTING, 0f);
+        animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 1f);
+        yield return new WaitForSeconds(0.4f);
+        Vector3 direction = (opponentGoal.transform.position - transform.position);
+        ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
+        GameManager.GetInstance().ballState = BallState.Free;
+        ball.GetComponent<TrailRenderer>().enabled = true;
+        shootingForce = 0f;
+        ball.IsStickToPlayer = false;
+        ball = null;
+        yield return new WaitForSeconds(0.5f);
+        this.MakePlayerAI();
+        canWalk = true;
+    }
+
+    private Player FindPlayerInDirection(Vector3 direction)
+    {
+        return allyPlayers.OrderBy(p => Vector3.Angle(direction, DirectionToPlayer(p))).FirstOrDefault();
+    }
+
+    private Vector3 DirectionToPlayer(Player p)
+    {
+        return Vector3.Normalize(p.transform.position - ball.transform.position);
+    }
+
+    private Vector3 DirectionToBall()
+    {
+        return Vector3.Normalize(GameManager.GetInstance().Ball.transform.position - transform.position);
+    }
+
+    public void MakePlayerAI()
+    {
+        ResetAnimator();
+        playerType = PlayerType.AI;
+        gameObject.tag = "Deactive Player";
+        animator.SetBool("Walk", false);
+        animator.SetBool("Run", false);
+        activenessArrow.SetActive(false);
+        gameObject.layer = LayerMask.NameToLayer("Default");
+    }
+
+    public void MakePlayerHuman()
+    {
+        ResetAnimator();
+        playerType = PlayerType.Human;
+        gameObject.tag = "Active Player";
+        gameObject.layer = LayerMask.NameToLayer("Active Player");
+        activenessArrow.SetActive(true);
+    }
+
 
     private GameObject FindBall()
     {
@@ -354,88 +540,9 @@ public class Player : MonoBehaviour
         );
     }
 
-    private void AIGoBall()
+    private Vector3 FindClosestTeammate(Vector3 position)
     {
-        animator.SetBool("Walk", true);
-        Vector3 direction = DirectionToBall().normalized;
-        direction.y = gravity;
-        Vector3 rotation = DirectionToBall();
-        controller.Move(direction * Time.deltaTime * walkingSpeed);
-        transform.LookAt(transform.position + rotation);
-    }
-
-    private void AIGetBall()
-    {
-        float distanceToBall = Vector3.Distance(transform.position, FindBall().transform.position);
-        if (distanceToBall < 1f)
-        {
-            AITakeBall();
-        }
-    }
-
-    private void AITakeBall()
-    {
-        FindBall().GetComponent<Ball>().IsStickToPlayer = true;
-        FindBall().GetComponent<Ball>().TransformPlayer = transform;
-        GameManager.GetInstance().ballState = team == Team.Red ? BallState.RedTeam : BallState.BlueTeam;
-        this.ball = FindBall().GetComponent<Ball>();
-    }
-
-
-    private void AIAttackZone()
-    {
-        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
-        animator.SetBool("Walk", true);
-        Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
-        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
-        transform.LookAt(direction);
-        if (Vector3.Distance(transform.position, direction) < 0.1f)
-        {
-            animator.SetBool("Walk", false);
-            transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
-            bool forward = Random.Range(0, 2) == 0;
-            bool backward = Random.Range(0, 2) == 0;
-            animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
-            animator.SetBool("ForwardJog", forward);
-            animator.SetBool("BackwardJog", backward);
-        }
-
-        Collider[] opponent = Physics.OverlapSphere(transform.position, scanRange);
-        opponent = opponent.Where(c => c.gameObject.tag == "Active Player" || c.gameObject.tag == "Deavtive Player" && c.GetComponent<Player>().team != team).ToArray();
-        if (opponent.Length > 0 && this.ball != null)
-        {
-            switch (this.ball == null)
-            {
-                case true:
-                    if (opponent[0].GetComponent<Player>().ball != null)
-                    {
-                        AIPressOpponent(opponent[0].gameObject);
-                    }
-                    break;
-                case false:
-                    GameObject teammate = FindTeammateInAttackZone();
-                    float possiblities = Random.Range(0, 15);
-                    if (possiblities >= 0 && possiblities < 1)
-                    {
-                        AIPassToTeammate(teammate);
-                    }
-                    else if (possiblities >= 1 && possiblities < 6)
-                    {
-                        if (IsInAttackZone()) AIShootToGoal();
-                    }
-                    break;
-            }
-        }
-    }
-
-    private void AIShootToGoal()
-    {
-        Vector3 direction = (opponentGoal.transform.position - transform.position);
-        this.MakePlayerAI();
-        ball.IsStickToPlayer = false;
-        ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);
-        GameManager.GetInstance().ballState = BallState.Free;
-        ball = null;
+        return allyPlayers.OrderBy(p => Vector3.Distance(position, p.transform.position)).FirstOrDefault().transform.position;
     }
 
     private GameObject FindTeammateInAttackZone()
@@ -444,78 +551,17 @@ public class Player : MonoBehaviour
         return x;
     }
 
-    private void AIPassToTeammate(GameObject teammate)
-    {
-        Player targetPlayer = teammate.GetComponent<Player>();
-
-        Vector3 direction = (targetPlayer.transform.position - transform.position).normalized;
-
-        this.MakePlayerAI();
-        ball.IsStickToPlayer = false;
-        ball.GetComponent<Rigidbody>().AddForce(direction * aiPassPower);
-        GameManager.GetInstance().ballState = BallState.Free;
-        ball = null;
-    }
-
-    private Vector3 FindClosestTeammate(Vector3 position)
-    {
-        return allyPlayers.OrderBy(p => Vector3.Distance(position, p.transform.position)).FirstOrDefault().transform.position;
-    }
-
-    private void AIDefendZone()
-    {
-        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
-        animator.SetBool("Walk", true);
-        Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
-        transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
-        transform.LookAt(direction);
-        if (Vector3.Distance(transform.position, direction) < 0.1f)
-        {
-            animator.SetBool("Walk", false);
-            
-            transform.LookAt(FindBall().transform.position + new Vector3(0, 0, 1f));
-            bool forward = Random.Range(0, 2) == 0;
-            bool backward = Random.Range(0, 2) == 0;
-            animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 1f);
-            animator.SetBool("ForwardJog", forward);
-            animator.SetBool("BackwardJog", backward);
-
-        }
-
-        if (defendZone.GetComponent<Zone>().activePlayer != null)
-        {
-            if (defendZone.GetComponent<Zone>().activePlayer != this && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().team != this.team && defendZone.GetComponent<Zone>().activePlayer.GetComponent<Player>().ball != null)
-            {
-                AIPressOpponent(defendZone.GetComponent<Zone>().activePlayer.gameObject);
-            }
-        }
-    }
-
-    private void AIPressOpponent(GameObject player)
-    {
-        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0f);
-        animator.SetBool("Walk", true);
-        Vector3 direction = player.transform.position;
-        transform.LookAt(direction);
-        transform.position = Vector3.MoveTowards(transform.position, direction, 0.07f * walkingSpeed);
-        if (Vector3.Distance(transform.position, direction) < 0.1f)
-        {
-            animator.SetBool("Walk", false);
-        }
-
-        if (Vector3.Distance(transform.position, direction) < 0.5f)
-        {
-            if (player.GetComponent<Player>().ball != null && Random.Range(0, 100) < 8)
-            {
-                player.GetComponent<Player>().ball = null;
-                AITakeBall();
-            }
-        }
-    }
-
     private bool IsInAttackZone()
     {
         return enemyZone.GetComponent<Collider>().bounds.Contains(transform.position);
+    }
+
+    public void ResetAnimator()
+    {
+        animator.SetLayerWeight(ANIMATION_LAYER_SHOOTING, 0);
+        animator.SetLayerWeight(ANIMATION_LAYER_DANCING, 0);
+        animator.SetLayerWeight(ANIMATION_LAYER_DISAPPOINTED, 0);
+        animator.SetLayerWeight(ANIMATION_LAYER_JOGGING, 0);
     }
 
     private void OnDrawGizmosSelected()

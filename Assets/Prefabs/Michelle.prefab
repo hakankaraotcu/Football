@@ -370,7 +370,7 @@ MonoBehaviour:
   team: 0
   walkingSpeed: 7
   runningSpeed: 14
-  shootingPower: 5000
+  shootingPower: 500
   passingPower: 5000
   scanRange: 3.5
   aiPassPower: 4300

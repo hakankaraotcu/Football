@@ -31,7 +31,9 @@ public class Player : MonoBehaviour
     private const float gravity = -9.81f;
     private float shootingForce;
 
-    private const int ANIMATION_LAYER_SHOOTING = 1;
+    private int aNIMATION_LAYER_SHOOTING = 1;
+    private int aNIMATION_LAYER_DANCING = 2;
+    private int aNIMATION_LAYER_DISAPPOINTED = 3;
 
     private Vector3 direction;
     private Vector3 rotation;
@@ -51,7 +53,8 @@ public class Player : MonoBehaviour
     public Transform defendZone;
     public Transform attackZone;
     public Transform enemyZone;
-    public Transform goal;
+    public Transform opponentGoal;
+    public Transform teamGoal;
 
     public GameObject speedPowerEffect;
     public GameObject speedEffect;
@@ -64,6 +67,10 @@ public class Player : MonoBehaviour
     public ShootingBar shootingBar;
 
     public Ball Ball { get => ball; set => ball = value; }
+
+    public int ANIMATION_LAYER_SHOOTING { get => aNIMATION_LAYER_SHOOTING;  private set => aNIMATION_LAYER_SHOOTING = value; }
+    public int ANIMATION_LAYER_DANCING { get => aNIMATION_LAYER_DANCING; private set => aNIMATION_LAYER_DANCING = value; }
+    public int ANIMATION_LAYER_DISAPPOINTED { get => aNIMATION_LAYER_DISAPPOINTED; private set => aNIMATION_LAYER_DISAPPOINTED = value; }
 
     private void Awake()
     {
@@ -109,42 +116,44 @@ public class Player : MonoBehaviour
                     }
                     if (canWalk) MoveAndLook();
                     Shoot();
-                    Pass();
+                    PassOrChangeActivePlayer();
                     GetBall();
                 }
                 break;
             case PlayerType.AI:
-                switch (GameManager.GetInstance().ballState)
+                if (GameManager.GetInstance().controlable)
                 {
-                    case BallState.Free:
-                        Player nearestPlayer = GameManager.GetInstance().FindClosestPlayerToBall();
-                        if (nearestPlayer == this)
-                        {
-                            Debug.Log("I am going ball" + this.name);
-                            AIGoBall();
-                            AIGetBall();
-                        }
-                        break;
-                    case BallState.RedTeam:
-                        if (team == Team.Red)
-                        {
-                            AIAttackZone();
-                        }
-                        else
-                        {
-                            AIDefendZone();
-                        }
-                        break;
-                    case BallState.BlueTeam:
-                        if (team == Team.Blue)
-                        {
-                            AIAttackZone();
-                        }
-                        else
-                        {
-                            AIDefendZone();
-                        }
-                        break;
+                    switch (GameManager.GetInstance().ballState)
+                    {
+                        case BallState.Free:
+                            Player nearestPlayer = GameManager.GetInstance().FindClosestPlayerToBall();
+                            if (nearestPlayer == this)
+                            {
+                                AIGoBall();
+                                AIGetBall();
+                            }
+                            break;
+                        case BallState.RedTeam:
+                            if (team == Team.Red)
+                            {
+                                AIAttackZone();
+                            }
+                            else
+                            {
+                                AIDefendZone();
+                            }
+                            break;
+                        case BallState.BlueTeam:
+                            if (team == Team.Blue)
+                            {
+                                AIAttackZone();
+                            }
+                            else
+                            {
+                                AIDefendZone();
+                            }
+                            break;
+                    }
                 }
                 break;
         }
@@ -204,7 +213,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void Pass()
+    private void PassOrChangeActivePlayer()
     {
         if (ball != null)
         {
@@ -229,6 +238,16 @@ public class Player : MonoBehaviour
                     ball.TransformPlayer = targetPlayer.transform;
                     ball = null;
                 }
+            }
+        }
+        else
+        {
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                Debug.Log("Change Active Player");
+                Player allyPlayer = allyPlayers.OrderBy(p => Vector3.Distance(p.transform.position, teamGoal.transform.position)).FirstOrDefault();
+                this.MakePlayerAI();
+                allyPlayer.MakePlayerHuman();
             }
         }
     }
@@ -402,7 +421,7 @@ public class Player : MonoBehaviour
 
     private void AIShootToGoal()
     {
-        Vector3 direction = (goal.transform.position - transform.position);
+        Vector3 direction = (opponentGoal.transform.position - transform.position);
         this.MakePlayerAI();
         ball.IsStickToPlayer = false;
         ball.GetComponent<Rigidbody>().AddForce(direction * aiShootPower);

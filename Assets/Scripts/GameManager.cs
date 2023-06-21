@@ -110,7 +110,8 @@ public class GameManager : MonoBehaviour
             character.GetComponent<Player>().attackZone = redTeamAttack.GetChild(i);
             character.GetComponent<Player>().defendZone = redTeamDefend.GetChild(i);
             character.GetComponent<Player>().enemyZone = blueZone;
-            character.GetComponent<Player>().goal = blueTeamGoal;
+            character.GetComponent<Player>().opponentGoal = blueTeamGoal;
+            character.GetComponent<Player>().teamGoal = redTeamGoal;
             redTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             if (i == 0) character.GetComponent<Player>().MakePlayerHuman();
@@ -126,7 +127,8 @@ public class GameManager : MonoBehaviour
             character.GetComponent<Player>().attackZone = blueTeamAttack.GetChild(i);
             character.GetComponent<Player>().defendZone = blueTeamDefend.GetChild(i);
             character.GetComponent<Player>().enemyZone = redZone;
-            character.GetComponent<Player>().goal = redTeamGoal;
+            character.GetComponent<Player>().opponentGoal = redTeamGoal;
+            character.GetComponent<Player>().teamGoal = blueTeamGoal;
             blueTeamPlayers.Add(character);
             players.Add(character.GetComponent<Player>());
             temp.RemoveAt(randomIndex);
@@ -150,16 +152,62 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void OnRedTeamScored()
+    public IEnumerator OnRedTeamScored()
     {
         isRedTeamStarting = false;
+
+        foreach (GameObject player in redTeamPlayers)
+        {
+            player.GetComponent<Animator>().Play("Dance", player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 0f);
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 1f);
+        }
+        foreach (GameObject player in blueTeamPlayers)
+        {
+            player.GetComponent<Animator>().Play("Disappointed", player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 0f);
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 1f);
+        }
+
+        yield return new WaitForSeconds(2f);
+
+        foreach (GameObject player in redTeamPlayers)
+        {
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 0f);
+        }
+        foreach (GameObject player in blueTeamPlayers)
+        {
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 0f);
+        }
+
         redTeamScore++;
         redTeamScoreText.text = "R:" + redTeamScore.ToString();
     }
 
-    public void OnBlueTeamScored()
+    public IEnumerator OnBlueTeamScored()
     {
         isRedTeamStarting = true;
+
+        foreach (GameObject player in blueTeamPlayers)
+        {
+            player.GetComponent<Animator>().Play("Dance", player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 0f);
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 1f);
+        }
+        foreach (GameObject player in redTeamPlayers)
+        {
+            player.GetComponent<Animator>().Play("Disappointed", player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 0f);
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 1f);
+        }
+
+        yield return new WaitForSeconds(2f);
+
+        foreach (GameObject player in blueTeamPlayers)
+        {
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DANCING, 0f);
+        }
+        foreach (GameObject player in redTeamPlayers)
+        {
+            player.GetComponent<Animator>().SetLayerWeight(player.GetComponent<Player>().ANIMATION_LAYER_DISAPPOINTED, 0f);
+        }
+
         blueTeamScore++;
         blueTeamScoreText.text = "B:" + blueTeamScore.ToString();
     }
@@ -181,10 +229,10 @@ public class GameManager : MonoBehaviour
         switch (lastTouchedPlayer.team)
         {
             case Team.Red:
-                OnRedTeamScored();
+                StartCoroutine(OnRedTeamScored());
                 break;
             case Team.Blue:
-                OnBlueTeamScored();
+                StartCoroutine(OnBlueTeamScored());
                 break;
         }
 
@@ -194,7 +242,7 @@ public class GameManager : MonoBehaviour
     public void PlacePlayers()
     {
         Debug.Log("Placing Players");
-        if(isRedTeamStarting) StartRedTeam();
+        if (isRedTeamStarting) StartRedTeam();
         else StartBlueTeam();
 
         Destroy(ball);
@@ -265,7 +313,7 @@ public class GameManager : MonoBehaviour
     public async void OnGoalScored()
     {
         controlable = false;
-        
+
         Sequence sequence = DOTween.Sequence();
         goalCelebrationText.gameObject.SetActive(true);
         goalCelebrationText.text = "GOAL";

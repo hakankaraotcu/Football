@@ -27,20 +27,29 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+    [Header("UI")]
     [SerializeField] TextMeshProUGUI redTeamScoreText;
     [SerializeField] TextMeshProUGUI blueTeamScoreText;
     [SerializeField] TextMeshProUGUI goalCelebrationText;
 
+    [Header("Score")]
     private int redTeamScore;
     private int blueTeamScore;
 
-    [SerializeField] private Transform redTeamSpawn;
-    [SerializeField] private Transform blueTeamSpawn;
+    [Header("Spawn Points")]
+    [SerializeField] private Transform blueTeamDefenceSpawn;
+    [SerializeField] private Transform blueTeamStartSpawn;
+    [SerializeField] private Transform redTeamStartSpawn;
+    [SerializeField] private Transform redTeamDefenceSpawn;
+
+
+    [Header("Attack and Defend Zones")]
     [SerializeField] private Transform redTeamAttack;
     [SerializeField] private Transform redTeamDefend;
     [SerializeField] private Transform blueTeamAttack;
     [SerializeField] private Transform blueTeamDefend;
 
+    [Header("Characters")]
     [SerializeField] private GameObject[] characters;
     [SerializeField] private GameObject ballPrefab;
 
@@ -57,6 +66,8 @@ public class GameManager : MonoBehaviour
 
     public bool controlable;
 
+    public bool isRedTeamStarting;
+
     private void OnEnable()
     {
         StartGame();
@@ -71,6 +82,7 @@ public class GameManager : MonoBehaviour
     {
         ballState = BallState.Free;
         this.controlable = true;
+        this.isRedTeamStarting = true;
         this.ball = Instantiate(this.ballPrefab);
         FindObjectOfType<CameraFollow>().SetBall(ball.transform);
 
@@ -83,11 +95,10 @@ public class GameManager : MonoBehaviour
 
         List<GameObject> temp = characters.Where(x => true).ToList();
 
-        for (int i = 0; i < redTeamSpawn.childCount; i++)
+        for (int i = 0; i < 4; i++)
         {
             int randomIndex = Random.Range(0, temp.Count);
-            GameObject character = Instantiate(temp[randomIndex], redTeamSpawn.GetChild(i).position, Quaternion.identity);
-            character.transform.LookAt(Vector3.zero);
+            GameObject character = Instantiate(temp[randomIndex]);
             character.GetComponent<Player>().MakePlayerAI();
             character.GetComponent<Player>().team = Team.Red;
             character.GetComponent<Player>().attackZone = redTeamAttack.GetChild(i);
@@ -98,11 +109,10 @@ public class GameManager : MonoBehaviour
             temp.RemoveAt(randomIndex);
         }
 
-        for (int i = 0; i < blueTeamSpawn.childCount; i++)
+        for (int i = 0; i < 4; i++)
         {
             int randomIndex = Random.Range(0, temp.Count);
-            GameObject character = Instantiate(temp[randomIndex], blueTeamSpawn.GetChild(i).position, Quaternion.identity);
-            character.transform.LookAt(Vector3.zero);
+            GameObject character = Instantiate(temp[randomIndex]);
             character.GetComponent<Player>().MakePlayerAI();
             character.GetComponent<Player>().team = Team.Blue;
             character.GetComponent<Player>().attackZone = blueTeamAttack.GetChild(i);
@@ -116,6 +126,8 @@ public class GameManager : MonoBehaviour
         {
             player.GetComponent<Player>().allyPlayers = players.Where(x => x != player && player.team == x.team).ToArray();
         }
+
+        StartRedTeam();
     }
 
     private void FinishGame()
@@ -130,23 +142,27 @@ public class GameManager : MonoBehaviour
 
     public void OnRedTeamScored()
     {
+        isRedTeamStarting = false;
         redTeamScore++;
         redTeamScoreText.text = "R:" + redTeamScore.ToString();
     }
 
     public void OnBlueTeamScored()
     {
+        isRedTeamStarting = true;
         blueTeamScore++;
         blueTeamScoreText.text = "B:" + blueTeamScore.ToString();
     }
 
     public void Out(Player lastTouchedPlayer)
     {
+        Debug.Log("Out");
         Invoke(nameof(PlacePlayers), 1f);
     }
 
     public void Throw(Player lastTouchedPlayer, Vector3 throwPoint)
     {
+        Debug.Log("Throw");
         Invoke(nameof(PlacePlayers), 1f);
     }
 
@@ -162,28 +178,56 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
-        StartCoroutine(OnGoalScored());
+        OnGoalScored();
     }
 
     public void PlacePlayers()
     {
+        Debug.Log("Placing Players");
+        if(isRedTeamStarting) StartRedTeam();
+        else StartBlueTeam();
+
+        Destroy(ball);
+        SpawnBall();
+        ballState = BallState.Free;
+    }
+
+    public void StartRedTeam()
+    {
+        Debug.Log("Starting Red Team");
         foreach (GameObject player in redTeamPlayers)
         {
             player.GetComponent<Player>().MakePlayerAI();
-            player.transform.position = redTeamSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
+            player.transform.position = redTeamStartSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
             player.transform.LookAt(Vector3.zero);
             if (redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
         }
 
         foreach (GameObject player in blueTeamPlayers)
         {
-            player.transform.position = blueTeamSpawn.GetChild(blueTeamPlayers.IndexOf(player)).position;
+            player.GetComponent<Player>().MakePlayerAI();
+            player.transform.position = blueTeamDefenceSpawn.GetChild(blueTeamPlayers.IndexOf(player)).position;
+            player.transform.LookAt(Vector3.zero);
+        }
+    }
+
+    public void StartBlueTeam()
+    {
+        Debug.Log("Starting Blue Team");
+        foreach (GameObject player in blueTeamPlayers)
+        {
+            player.GetComponent<Player>().MakePlayerAI();
+            player.transform.position = blueTeamStartSpawn.GetChild(blueTeamPlayers.IndexOf(player)).position;
             player.transform.LookAt(Vector3.zero);
         }
 
-        Destroy(ball);
-        SpawnBall();
-        ballState = BallState.Free;
+        foreach (GameObject player in redTeamPlayers)
+        {
+            player.GetComponent<Player>().MakePlayerAI();
+            player.transform.position = redTeamDefenceSpawn.GetChild(redTeamPlayers.IndexOf(player)).position;
+            player.transform.LookAt(Vector3.zero);
+            if (redTeamPlayers.IndexOf(player) == 0) player.GetComponent<Player>().MakePlayerHuman();
+        }
     }
 
     private void SpawnBall()
@@ -208,18 +252,19 @@ public class GameManager : MonoBehaviour
         return closestPlayer.GetComponent<Player>();
     }
 
-    public IEnumerator OnGoalScored()
+    public async void OnGoalScored()
     {
         controlable = false;
+        
+        Sequence sequence = DOTween.Sequence();
         goalCelebrationText.gameObject.SetActive(true);
         goalCelebrationText.text = "GOAL";
-        goalCelebrationText.transform.DOLocalMoveX(0, 1f);
-        yield return new WaitForSeconds(2f);
-        goalCelebrationText.transform.DOLocalMoveX(1500, 1f);
-        yield return new WaitForSeconds(1.5f);
+        sequence.Append(goalCelebrationText.transform.DOLocalMoveX(0, 1f)).AppendInterval(1f);
+        sequence.Append(goalCelebrationText.transform.DOLocalMoveX(1500, 1f));
+        await sequence.Play().AsyncWaitForCompletion();
         goalCelebrationText.gameObject.SetActive(false);
         goalCelebrationText.transform.localPosition = new Vector3(-1500, 0, 0);
-        PlacePlayers();
         controlable = true;
+        PlacePlayers();
     }
 }

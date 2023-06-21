@@ -61,4 +61,10 @@ public class Ball : MonoBehaviour
             previousLocation = currentLocation;
         }
     }
+
+    public void SlowDown()
+    {
+        GetComponent<Rigidbody>().velocity *= 0.25f;
+        GetComponent<Rigidbody>().angularVelocity *= 0.25f;
+    }
 }

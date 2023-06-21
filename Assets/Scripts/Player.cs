@@ -20,10 +20,6 @@ public class Player : MonoBehaviour
     [Header("Passing")]
     [SerializeField] private float passingPower;
 
-
-    [Header("Range")]
-    [SerializeField] private float opponentScanRange;
-
     private const float gravity = -9.81f;
     private float shootingForce;
 
@@ -359,6 +355,7 @@ public class Player : MonoBehaviour
         animator.SetBool("Walk", true);
         Vector3 direction = attackZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        transform.LookAt(direction);
         if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
@@ -370,6 +367,7 @@ public class Player : MonoBehaviour
         animator.SetBool("Walk", true);
         Vector3 direction = defendZone.GetComponent<Collider>().bounds.center;
         transform.position = Vector3.MoveTowards(transform.position, direction, 0.05f * walkingSpeed);
+        transform.LookAt(direction);
         if (Vector3.Distance(transform.position, direction) < 0.1f)
         {
             animator.SetBool("Walk", false);
@@ -404,11 +402,4 @@ public class Player : MonoBehaviour
             }
         }
     }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, opponentScanRange);
-    }
-
 }
